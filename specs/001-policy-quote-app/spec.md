@@ -8,6 +8,33 @@
 
 **Input**: User description: "Based on exercise.md"
 
+## Clarifications
+
+### Session 2026-08-28
+
+- Q: How is the plain-English risk summary produced? → A: The rules knowledge
+  base holds a per-band summary template with placeholders; the engine fills it
+  and appends the applied factor descriptions sourced from the rules knowledge
+  base. No customer-facing risk prose lives in product logic.
+- Q: Should the rules knowledge base support compound conditions now? → A: Yes —
+  full recursive conditions from v1. A condition is either a leaf comparison or a
+  group (`all` / `any` / `not`) containing nested conditions, nestable to any
+  depth. Cross-field comparison is out of scope.
+- Q: How are premium figures rounded and derived? → A: The annual premium is
+  authoritative. Evaluate the formula, round the annual figure to two decimal
+  places, then derive the monthly figure as annual ÷ 12 rounded to two decimal
+  places. Twelve monthly instalments therefore never exceed the quoted annual
+  premium.
+- Q: What does "coverage details" contain? → A: The pricing breakdown that
+  produced the premium — base premium, the risk multiplier applied, the coverage
+  load factor, and the resulting annual figure. Every value is sourced from the
+  rules knowledge base, making the arithmetic auditable by the customer. Cover
+  limits, excesses and exclusions are out of scope.
+- Q: How does the service handle a rules knowledge base whose schema version it
+  does not support? → A: A single version field. The service declares the range
+  of rules versions it supports and refuses to start when the loaded rules fall
+  outside that range, rather than quoting on rules it may misinterpret.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Get an instant premium quote (Priority: P1)
@@ -155,10 +182,21 @@ specific, human-readable message is shown and no quote is produced.
 - **Malformed or unreadable rules knowledge base**: the service MUST fail loudly
   and refuse to start or refuse to quote, rather than silently quoting on partial
   or default rules.
+- **Unsupported rules version**: a well-formed rules knowledge base declaring a
+  version outside the service's supported range MUST prevent startup with a
+  message naming both the version found and the range expected — distinct from
+  the malformed-rules failure above, since the file itself is structurally valid.
 - **Unknown condition operator in the rules knowledge base**: MUST be rejected as
   a rules validation error identifying the offending factor, not silently skipped.
 - **Empty factor list**: a rules knowledge base with no factors MUST produce a
   valid zero-score, lowest-band quote rather than an error.
+- **Empty compound group**: a group condition (`all`, `any`, `not`) containing no
+  nested conditions MUST be rejected as a rules validation error rather than
+  defaulting to true or false, since either default would silently mis-price.
+- **Per-occurrence points on a compound condition**: where a factor both matches
+  a compound condition and accrues per occurrence, the occurrence count MUST be
+  drawn from an explicitly nominated field rather than inferred from the
+  condition structure, so the point total is unambiguous.
 
 ## Requirements *(mandatory)*
 
@@ -175,9 +213,22 @@ specific, human-readable message is shown and no quote is produced.
   the risk multiplier of the resolved band, multiplied by the coverage load
   factor — with all three operands sourced from the rules knowledge base.
 - **FR-004**: System MUST return both a monthly and an annual premium.
+- **FR-004a**: System MUST treat the annual premium as authoritative: the formula
+  in FR-003 is evaluated to produce the annual figure, which is rounded to two
+  decimal places; the monthly figure is then derived as the rounded annual
+  premium divided by twelve, rounded to two decimal places. Twelve monthly
+  instalments MUST therefore never exceed the quoted annual premium.
+- **FR-004b**: System MUST apply rounding only at the two points named in
+  FR-004a. Intermediate values — the risk score, the multiplier product, and the
+  coverage load — MUST NOT be rounded, so that results remain reproducible.
 - **FR-005**: System MUST return a numeric risk score, a resolved risk band, a
   plain-English risk summary, the coverage details, and the list of applied risk
   factors for every successful quote.
+- **FR-005a**: System MUST populate the coverage details with the pricing
+  breakdown that produced the premium: the base premium, the risk multiplier
+  applied, the coverage load factor, and the resulting annual figure. Every value
+  MUST be sourced from the rules knowledge base, so a customer can reconcile the
+  quoted premium against the stated formula.
 - **FR-006**: System MUST classify every quote into exactly one of three risk
   bands — STANDARD, ELEVATED, or HIGH RISK — determined solely by score
   boundaries defined in the rules knowledge base.
@@ -193,12 +244,22 @@ specific, human-readable message is shown and no quote is produced.
   details generically, so that the evaluation logic is independent of any
   specific factor.
 - **FR-009**: Adding a risk factor, removing a risk factor, altering a factor's
-  points, altering a band boundary, altering a band's risk multiplier, altering
-  the base premium, or altering the coverage load factor MUST each be achievable
-  by editing the rules knowledge base alone, with zero changes to product logic.
-- **FR-010**: System MUST support, at minimum, conditions that test a field for
+  points, altering a band boundary, altering a band's risk multiplier, altering a
+  band's summary wording, altering the base premium, or altering the coverage
+  load factor MUST each be achievable by editing the rules knowledge base alone,
+  with zero changes to product logic.
+- **FR-010**: System MUST support leaf conditions that test a single field for
   equality, greater-than, greater-than-or-equal, falling between two bounds, and
   falling outside a range.
+- **FR-010a**: System MUST support compound conditions. A condition is either a
+  leaf comparison or a group combining nested conditions with `all` (logical
+  AND), `any` (logical OR), or `not` (negation). Groups MUST be nestable to
+  arbitrary depth, so that a factor combining two or more fields — for example
+  "property type is Flat AND property value exceeds £500,000" — is expressible
+  purely as a rules knowledge base entry.
+- **FR-010b**: System MUST evaluate compound conditions recursively through the
+  same generic evaluator used for leaves, so that adding a factor of any
+  structural complexity requires no change to product logic.
 - **FR-011**: System MUST support factors whose points accrue per matched
   occurrence as well as factors that contribute a fixed amount once.
 - **FR-012**: System MUST validate the rules knowledge base when it is loaded and
@@ -206,9 +267,24 @@ specific, human-readable message is shown and no quote is produced.
   unknown operator, or omits required values.
 - **FR-013**: System MUST record a version identifier in the rules knowledge base
   and MUST report the active version in every quote response.
+- **FR-013a**: System MUST declare the range of rules knowledge base versions it
+  supports and MUST verify the loaded version against that range at startup.
+- **FR-013b**: System MUST refuse to start when the loaded rules knowledge base
+  version falls outside the supported range, reporting the version found and the
+  range expected. It MUST NOT produce quotes from a rules set it may
+  misinterpret, and MUST NOT silently coerce or downgrade an unsupported version.
 - **FR-014**: System MUST source the human-readable description of every applied
   factor from the rules knowledge base, so that a newly added factor is
   self-describing wherever it is displayed.
+- **FR-014a**: System MUST compose the plain-English risk summary from a summary
+  template defined per risk band in the rules knowledge base, substituting
+  quote-specific values into the template's placeholders and appending the
+  descriptions of the applied factors. No customer-facing risk prose may be held
+  in product logic, so that rewording an explanation or introducing a new band
+  remains a rules-knowledge-base-only change.
+- **FR-014b**: System MUST treat a missing or malformed summary template, or a
+  placeholder the engine cannot resolve, as a rules validation failure under
+  FR-012 rather than emitting a partially substituted or empty summary.
 
 **Presentation**
 
@@ -246,8 +322,11 @@ specific, human-readable message is shown and no quote is produced.
 - **Risk Factor**: A single named rule within the rules knowledge base — an
   identifier, a human-readable description, a condition to evaluate against the
   quote request, a point value, and whether those points accrue per occurrence.
-- **Risk Band**: A named classification with an inclusive score range and an
-  associated risk multiplier applied to the base premium.
+  A condition is either a leaf comparison on one field or a group (`all`, `any`,
+  `not`) of nested conditions.
+- **Risk Band**: A named classification with an inclusive score range, an
+  associated risk multiplier applied to the base premium, and a summary template
+  used to compose the customer-facing risk explanation.
 - **Applied Factor**: A record of a factor that matched a specific quote request,
   carrying its identifier, description, and the points it contributed.
 
@@ -284,6 +363,9 @@ specific, human-readable message is shown and no quote is produced.
   the customer name is captured for personalisation of the quote, not identity.
 - **Single line of business**: home insurance only; no motor, travel, or other
   product lines.
+- **Pricing breakdown, not policy wording**: coverage details explain how the
+  premium was arrived at; sums insured, cover limits, excesses and exclusions are
+  out of scope.
 - **Single currency and locale**: pounds sterling and UK postcodes only.
 - **Postcode is captured but not scored by default**: it is collected because
   geography-based factors — such as flood-zone prefixes — are an anticipated
