@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://policyquote.local/schemas/risk-kb.schema.json",
+  "title": "PolicyQuote Risk Knowledge Base",
+  "description": "Contract for the external risk scoring rules file (risk-kb.json at the repository root). This document is the human- and tool-readable statement of the contract; the runtime authority is the equivalent Zod schema in the backend, which validates the file at load time (Principle IV, FR-012). Editing this file is the ONLY change required to add, remove or retune a risk factor, move a band boundary, or change the base premium, coverage load factor, risk multiplier, or band wording (FR-009).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "basePremium", "coverageLoadFactor", "riskBands", "factors"],
+
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Semver version of this rules set. Reported on every quote (FR-013) and checked at startup against the service's declared supported range; a version outside the range prevents startup (FR-013a, FR-013b).",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+
+    "basePremium": {
+      "type": "number",
+      "description": "Annual premium before risk and coverage adjustment, in pounds.",
+      "exclusiveMinimum": 0,
+      "examples": [300]
+    },
+
+    "coverageLoadFactor": {
+      "type": "number",
+      "description": "Multiplier applied for the coverage level.",
+      "exclusiveMinimum": 0,
+      "examples": [1.2]
+    },
+
+    "riskBands": {
+      "type": "array",
+      "description": "Ordered ascending by score. Bands MUST be contiguous and non-overlapping — validated at load time. A score above the greatest max clamps to the last band. An array (rather than the object map in the brief) gives deterministic ordering and lets the engine identify the highest band positionally, so no band identifier is hardcoded (Principle I).",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/riskBand" }
+    },
+
+    "factors": {
+      "type": "array",
+      "description": "The risk rules. MAY be empty — an empty list is a valid zero-score, lowest-band quote, not an error. Factor ids MUST be unique.",
+      "items": { "$ref": "#/$defs/riskFactor" }
+    }
+  },
+
+  "$defs": {
+
+    "riskBand": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "min", "max", "riskMultiplier", "summaryTemplate"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Machine identifier returned as `riskBand` in the API response and used as the frontend badge's styling hook.",
+          "minLength": 1,
+          "examples": ["STANDARD", "ELEVATED", "HIGH_RISK"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Customer-facing band text. Separate from `id` so rewording for customers does not change the API contract.",
+          "minLength": 1,
+          "examples": ["Standard", "Elevated", "HIGH RISK"]
+        },
+        "min": {
+          "type": "integer",
+          "description": "Inclusive lower bound of the score range.",
+          "minimum": 0
+        },
+        "max": {
+          "type": "integer",
+          "description": "Inclusive upper bound of the score range."
+        },
+        "riskMultiplier": {
+          "type": "number",
+          "description": "Applied to basePremium for scores in this band.",
+          "exclusiveMinimum": 0,
+          "examples": [1.0, 1.5, 2.2]
+        },
+        "summaryTemplate": {
+          "type": "string",
+          "description": "Plain-English explanation for this band, using {{placeholder}} tokens. The engine substitutes values and appends the applied factor descriptions. Every placeholder MUST belong to the engine's published set — customerName, riskScore, riskBandLabel, annualPremium, monthlyPremium, appliedFactorCount, propertyType. An unknown placeholder is a load-time validation failure, never a partial substitution (FR-014b). No customer-facing risk prose may live in code (FR-014a).",
+          "minLength": 1,
+          "examples": [
+            "{{customerName}}, your property scored {{riskScore}} and falls into our {{riskBandLabel}} band, giving an annual premium of £{{annualPremium}}."
+          ]
+        }
+      }
+    },
+
+    "riskFactor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "condition", "points"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this rule.",
+          "minLength": 1,
+          "examples": ["property_type_flat"]
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable text shown to the customer when this factor applies. The ONLY source of this text — the frontend keeps no local copy (FR-014, FR-016).",
+          "minLength": 1,
+          "examples": ["Flat — higher shared risk"]
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "Evaluated against the quote request."
+        },
+        "points": {
+          "type": "number",
+          "description": "Points contributed when the condition matches. May be negative to express a discount."
+        },
+        "perOccurrence": {
+          "type": "boolean",
+          "description": "When true, points are multiplied by the value of `occurrenceField`. When false or absent, points are contributed once regardless of magnitude. A per-occurrence factor whose count is 0 contributes 0 points and is NOT listed as applied.",
+          "default": false
+        },
+        "occurrenceField": {
+          "type": "string",
+          "description": "REQUIRED when perOccurrence is true. Names the numeric quote-request field supplying the occurrence count. Nominated explicitly rather than inferred from the condition structure, so the total stays unambiguous when the condition is a compound group.",
+          "examples": ["previousClaims"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "perOccurrence": { "const": true } }, "required": ["perOccurrence"] },
+          "then": { "required": ["occurrenceField"] }
+        }
+      ]
+    },
+
+    "condition": {
+      "description": "Either a leaf comparison on one field, or a group combining nested conditions. Groups nest to arbitrary depth and evaluate through the same recursive evaluator as leaves, so a factor of any structural complexity is a KB-only addition (FR-010b).",
+      "oneOf": [
+        { "$ref": "#/$defs/leafCondition" },
+        { "$ref": "#/$defs/groupCondition" }
+      ]
+    },
+
+    "leafCondition": {
+      "type": "object",
+      "description": "A comparison of one quote-request field against literal operands. `field` MUST name a key of the quote request; an unknown field is a load-time validation error, not a silent false. Operand shape is enforced per operator, so a mismatched operand fails at load rather than evaluating against undefined.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "operator", "value"],
+          "properties": {
+            "field": { "type": "string", "minLength": 1 },
+            "operator": { "enum": ["eq", "gt", "gte"] },
+            "value": { "type": ["string", "number", "boolean"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "operator", "value"],
+          "properties": {
+            "field": { "type": "string", "minLength": 1 },
+            "operator": {
+              "const": "startsWith",
+              "description": "Case-sensitive prefix match against a string field. Matched against the normalised (trimmed, uppercased) request value, so postcode prefixes such as EX or PL behave consistently."
+            },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "operator", "min", "max"],
+          "properties": {
+            "field": { "type": "string", "minLength": 1 },
+            "operator": {
+              "enum": ["between", "outside range"],
+              "description": "`between` is inclusive at both bounds: min <= field <= max. `outside range` is its complement: field < min || field > max."
+            },
+            "min": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        }
+      ]
+    },
+
+    "groupCondition": {
+      "type": "object",
+      "description": "Combines nested conditions. `all` is logical AND, `any` is logical OR, `not` is negation (true when no child matches). Exactly one combinator key is permitted. The array MUST be non-empty — an empty group is a load-time validation error, because defaulting it to either true or false would silently mis-price (spec edge case).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["all"],
+          "properties": {
+            "all": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/condition" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["any"],
+          "properties": {
+            "any": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/condition" } }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["not"],
+          "properties": {
+            "not": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/condition" } }
+          }
+        }
+      ]
+    }
+  },
+
+  "examples": [
+    {
+      "version": "1.0.0",
+      "basePremium": 300,
+      "coverageLoadFactor": 1.2,
+      "riskBands": [
+        {
+          "id": "STANDARD",
+          "label": "Standard",
+          "min": 0,
+          "max": 25,
+          "riskMultiplier": 1.0,
+          "summaryTemplate": "{{customerName}}, your {{propertyType}} scored {{riskScore}} and sits in our {{riskBandLabel}} band."
+        },
+        {
+          "id": "ELEVATED",
+          "label": "Elevated",
+          "min": 26,
+          "max": 60,
+          "riskMultiplier": 1.5,
+          "summaryTemplate": "{{customerName}}, your {{propertyType}} scored {{riskScore}}, placing it in our {{riskBandLabel}} band with {{appliedFactorCount}} factor(s) applied."
+        },
+        {
+          "id": "HIGH_RISK",
+          "label": "HIGH RISK",
+          "min": 61,
+          "max": 999,
+          "riskMultiplier": 2.2,
+          "summaryTemplate": "{{customerName}}, your {{propertyType}} scored {{riskScore}} and falls into our {{riskBandLabel}} band, giving an annual premium of £{{annualPremium}}."
+        }
+      ],
+      "factors": [
+        {
+          "id": "age_young_elderly",
+          "description": "Under 25 or over 75 — higher risk profile",
+          "condition": { "field": "age", "operator": "outside range", "min": 25, "max": 75 },
+          "points": 20
+        },
+        {
+          "id": "previous_claims_low",
+          "description": "1–2 previous claims",
+          "condition": { "field": "previousClaims", "operator": "between", "min": 1, "max": 2 },
+          "points": 15,
+          "perOccurrence": true,
+          "occurrenceField": "previousClaims"
+        },
+        {
+          "id": "property_type_flat",
+          "description": "Flat — higher shared risk",
+          "condition": { "field": "propertyType", "operator": "eq", "value": "Flat" },
+          "points": 10
+        },
+        {
+          "id": "flat_high_value",
+          "description": "Flat valued over £500,000 — combined exposure",
+          "condition": {
+            "all": [
+              { "field": "propertyType", "operator": "eq", "value": "Flat" },
+              { "field": "propertyValue", "operator": "gt", "value": 500000 }
+            ]
+          },
+          "points": 35
+        }
+      ]
+    }
+  ]
+}

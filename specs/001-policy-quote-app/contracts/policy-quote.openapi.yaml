@@ -1,0 +1,280 @@
+openapi: 3.1.0
+
+info:
+  title: PolicyQuote API
+  version: 1.0.0
+  description: |
+    Home insurance quoting service. A single endpoint accepts customer and
+    property details and returns an indicative premium with an explainable risk
+    assessment.
+
+    All scoring rules originate from an external Knowledge Base file
+    (`risk-kb.json` at the repository root). The engine holds no scoring values.
+    The active KB version is reported on every successful quote (FR-013).
+
+    The calculation is deterministic and self-contained: identical details
+    evaluated against an identical KB always produce an identical result
+    (FR-020, SC-008). No LLM or third-party service participates.
+
+servers:
+  - url: http://localhost:3000
+    description: Local backend (`npm start` in `backend/`)
+  - url: /
+    description: Same-origin via the Angular dev-server proxy (research R4)
+
+paths:
+  /policy/quote:
+    post:
+      operationId: createQuote
+      summary: Calculate an indicative home insurance premium
+      description: |
+        Validates the submitted details, evaluates every KB factor against them,
+        accumulates a risk score, resolves a risk band, and computes the
+        premium as `basePremium × riskMultiplier × coverageLoadFactor` with all
+        three operands sourced from the KB (FR-003).
+
+        The annual premium is authoritative and rounded to two decimal places;
+        the monthly premium is then derived as annual ÷ 12, also rounded to two
+        decimal places, so twelve instalments never exceed the annual figure
+        (FR-004a).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+            examples:
+              standardRisk:
+                summary: Profile triggering no risk factors
+                value:
+                  customerName: Alice Fairweather
+                  age: 42
+                  propertyType: House
+                  propertyValue: 320000
+                  postcode: SW1A 1AA
+                  previousClaims: 0
+              highRisk:
+                summary: Young customer, flat, high value, multiple claims
+                value:
+                  customerName: Ben Hazard
+                  age: 22
+                  propertyType: Flat
+                  propertyValue: 820000
+                  postcode: M1 1AE
+                  previousClaims: 3
+      responses:
+        '200':
+          description: Quote calculated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResult'
+        '400':
+          description: |
+            The submitted details failed validation. No premium is produced and
+            each offending field is identified (FR-002, SC-007).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '405':
+          description: Method not allowed. Only POST is accepted on this path.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: |
+            Unexpected server fault. Returned as a structured body, never as an
+            unhandled thrown exception (Principle III).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+
+    QuoteRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - customerName
+        - age
+        - propertyType
+        - propertyValue
+        - postcode
+        - previousClaims
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Captured for personalisation, not identity.
+        age:
+          type: integer
+          minimum: 18
+          maximum: 120
+        propertyType:
+          type: string
+          enum: [House, Flat, Bungalow]
+        propertyValue:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 100000000
+          description: Pounds sterling.
+        postcode:
+          type: string
+          description: |
+            UK postcode. Normalised (trimmed and uppercased) during parsing so
+            that prefix-matching geography factors behave consistently.
+        previousClaims:
+          type: integer
+          minimum: 0
+          maximum: 50
+          description: Claims in the last five years.
+
+    QuoteResult:
+      type: object
+      additionalProperties: false
+      required:
+        - monthlyPremium
+        - annualPremium
+        - riskBand
+        - riskBandLabel
+        - riskScore
+        - riskSummary
+        - coverageDetails
+        - appliedFactors
+        - kbVersion
+      properties:
+        monthlyPremium:
+          type: number
+          description: Pounds, 2dp. Derived from the rounded annual premium.
+          examples: [30.00]
+        annualPremium:
+          type: number
+          description: Pounds, 2dp. Authoritative figure (FR-004a).
+          examples: [360.00]
+        riskBand:
+          type: string
+          description: |
+            Machine identifier of the resolved band, sourced from the KB. Not a
+            fixed enum — bands are KB-defined and a new band is a KB-only
+            change (FR-014a).
+          examples: [STANDARD, ELEVATED, HIGH_RISK]
+        riskBandLabel:
+          type: string
+          description: Customer-facing band text from the KB.
+          examples: ['HIGH RISK']
+        riskScore:
+          type: number
+          description: |
+            Unrounded sum of the contributions of every applied factor
+            (FR-004b). Equals the sum of `appliedFactors[].points`.
+          examples: [65]
+        riskSummary:
+          type: string
+          description: |
+            Composed from the resolved band's KB summary template with
+            placeholders substituted, followed by the applied factor
+            descriptions. No customer-facing risk prose exists in code
+            (FR-014a).
+        coverageDetails:
+          $ref: '#/components/schemas/CoverageDetails'
+        appliedFactors:
+          type: array
+          description: |
+            Factors that matched. Empty when none matched, which is a valid
+            STANDARD-band result, not an error.
+          items:
+            $ref: '#/components/schemas/AppliedFactor'
+        kbVersion:
+          type: string
+          description: Semver version of the KB that produced this quote (FR-013).
+          examples: ['1.0.0']
+
+    CoverageDetails:
+      type: object
+      additionalProperties: false
+      description: |
+        The pricing breakdown behind the premium (FR-005a). Every value is
+        KB-sourced so a customer can reconcile the quote against the formula.
+        Cover limits, excesses and exclusions are out of scope.
+      required: [basePremium, riskMultiplier, coverageLoadFactor, annualPremium]
+      properties:
+        basePremium:
+          type: number
+          examples: [300]
+        riskMultiplier:
+          type: number
+          description: The resolved band's multiplier.
+          examples: [1.0]
+        coverageLoadFactor:
+          type: number
+          examples: [1.2]
+        annualPremium:
+          type: number
+          description: Result of the formula, rounded to 2dp.
+          examples: [360.00]
+
+    AppliedFactor:
+      type: object
+      additionalProperties: false
+      required: [id, description, points]
+      properties:
+        id:
+          type: string
+          description: KB factor identifier.
+          examples: [property_type_flat]
+        description:
+          type: string
+          description: |
+            Human-readable text taken verbatim from the KB. The frontend
+            displays this and holds no local copy (FR-016).
+          examples: ['Flat — higher shared risk']
+        points:
+          type: number
+          description: |
+            Points actually contributed, after any per-occurrence
+            multiplication — not the KB's per-unit value. These sum exactly to
+            `riskScore`.
+          examples: [10]
+
+    ValidationErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message, issues]
+      properties:
+        error:
+          type: string
+          const: VALIDATION_ERROR
+        message:
+          type: string
+          description: Human-readable summary safe to display (FR-018).
+          examples: ['Please correct the highlighted fields.']
+        issues:
+          type: array
+          description: One entry per offending field (FR-002, SC-007).
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, message]
+            properties:
+              field:
+                type: string
+                examples: [propertyValue]
+              message:
+                type: string
+                examples: ['Property value must be greater than 0.']
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          examples: [INTERNAL_ERROR, METHOD_NOT_ALLOWED]
+        message:
+          type: string
