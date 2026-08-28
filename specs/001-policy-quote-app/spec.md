@@ -209,6 +209,11 @@ specific, human-readable message is shown and no quote is produced.
   postcode, and number of previous claims in the last five years.
 - **FR-002**: System MUST validate all submitted details before calculation and
   reject any submission that is incomplete or outside accepted ranges.
+- **FR-002a**: System MUST reject an age below 18 or above 120, a property value
+  of zero or below or above £100,000,000, a previous-claims count below 0 or
+  above 50, and a customer name that is empty or exceeds 100 characters. These
+  bounds define "outside accepted ranges" in FR-002 and are the thresholds
+  against which SC-007 is measured.
 - **FR-003**: System MUST calculate a premium as the base premium multiplied by
   the risk multiplier of the resolved band, multiplied by the coverage load
   factor — with all three operands sourced from the rules knowledge base.
@@ -231,7 +236,10 @@ specific, human-readable message is shown and no quote is produced.
   quoted premium against the stated formula.
 - **FR-006**: System MUST classify every quote into exactly one of three risk
   bands — STANDARD, ELEVATED, or HIGH RISK — determined solely by score
-  boundaries defined in the rules knowledge base.
+  boundaries defined in the rules knowledge base. Each band carries a machine
+  identifier and a separate customer-facing label, both defined in the rules
+  knowledge base, so that rewording a band for customers does not change the
+  quote response contract.
 
 **Rules knowledge base**
 
@@ -314,8 +322,8 @@ specific, human-readable message is shown and no quote is produced.
 - **Quote Request**: The details a customer submits — name, age, property type,
   property value, postcode, and previous claims count in the last five years.
 - **Quote Result**: The outcome returned to the customer — monthly premium,
-  annual premium, risk band, risk score, risk summary, coverage details, applied
-  factors, and the active rules version.
+  annual premium, risk band, risk band label, risk score, risk summary, coverage
+  details, applied factors, and the active rules version.
 - **Rules Knowledge Base**: The externally maintained, versioned rules set
   containing the base premium, coverage load factor, risk band definitions with
   their score ranges and risk multipliers, and the collection of risk factors.
@@ -324,9 +332,10 @@ specific, human-readable message is shown and no quote is produced.
   quote request, a point value, and whether those points accrue per occurrence.
   A condition is either a leaf comparison on one field or a group (`all`, `any`,
   `not`) of nested conditions.
-- **Risk Band**: A named classification with an inclusive score range, an
-  associated risk multiplier applied to the base premium, and a summary template
-  used to compose the customer-facing risk explanation.
+- **Risk Band**: A named classification carrying a machine identifier and a
+  separate customer-facing label, an inclusive score range, an associated risk
+  multiplier applied to the base premium, and a summary template used to compose
+  the customer-facing risk explanation.
 - **Applied Factor**: A record of a factor that matched a specific quote request,
   carrying its identifier, description, and the points it contributed.
 

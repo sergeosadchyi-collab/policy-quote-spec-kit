@@ -9,6 +9,7 @@ Format and rules are defined in `CLAUDE.md` → *Agent Logging Protocol*.
 | 2 | 2026-08-28 | docs | AGENTS.md universal entrypoint | accepted |
 | 3 | 2026-08-28 | docs | Implementation plan & Phase 0/1 design artifacts | accepted with edits |
 | 4 | 2026-08-28 | docs | Task breakdown (tasks.md) for 001-policy-quote-app | accepted with edits |
+| 5 | 2026-08-28 | docs | Applied `/speckit-analyze` remediation to spec.md, plan.md, data-model.md, tasks.md | accepted with edits |
 
 ---
 
@@ -299,3 +300,102 @@ US3=14, US4=5). One task (T063) names a command rather than a file path, which i
 intended for a verification task. Node native type stripping confirmed working on
 22.22.3 before being written into T002; the `/tmp` fixture was deleted afterwards.
 **Files touched:** `specs/001-policy-quote-app/tasks.md`, `AGENT_LOG.md`
+
+---
+
+### Entry 5 — 2026-08-28 21:50 — Applied `/speckit-analyze` remediation across the spec artifacts
+
+**Agent/Model:** GitHub Copilot CLI / Claude Sonnet 5
+**Scope:** docs (specs/001-policy-quote-app)
+
+**Prompt given (verbatim):**
+> /speckit-analyze
+
+then, after the report was presented:
+
+> Yes, suggest
+
+then:
+
+> yes, apply
+
+**Output received:**
+The read-only analysis produced 13 findings across the three core artifacts, a
+coverage table over all 39 requirement keys (30 FR + 9 SC) and metrics: FR
+coverage 100%, SC coverage 78%, combined 95%, with **1 CRITICAL**. On approval
+the agent applied the remediation to four files:
+
+- `spec.md` — added **FR-002a** (explicit numeric bounds for age, property value,
+  claim count and name length); extended **FR-006** so a risk band carries both a
+  machine identifier and a separate customer-facing label; added `risk band label`
+  to the Quote Result entity and rewrote the Risk Band entity's opening clause.
+- `plan.md` — Technical Context scale line corrected from "30 functional
+  requirements / ~12 backend modules" to "31 functional requirements / ~19 backend
+  source modules".
+- `data-model.md` — §1 sources re-pointed at FR-002a, and a **canonical UK postcode
+  regex** pinned in one place with an explicit instruction that both the server
+  schema and the client form use that exact rule.
+- `tasks.md` — rewritten and renumbered from 65 to **70** tasks.
+
+The task restructuring was the substantive part:
+
+- **C1 (CRITICAL, Principle III)** — User Story 1's checkpoint was labelled
+  "demo-ready" while the 200 response carried only `monthlyPremium` and
+  `annualPremium`; six required fields arrived in US2 and `kbVersion` in US3.
+  Moved the summary-composer test and implementation into US1, folded the
+  `kbVersion` task into US1's handler wiring, and deleted the old US2 backend task
+  entirely. US2 is now presentation-only (3 tasks).
+- **C2 (HIGH)** — FR-012/FR-013b are unconditional but KB cross-validation and the
+  semver gate sat in US3, so Phase 2 could complete with an invalid KB accepted.
+  Split the work by schema dependency: placeholder-set constant, band
+  contiguity/unique-id/placeholder checks and the version gate moved into
+  Foundational; the checks that need the recursive schema (unknown operator, empty
+  group, `perOccurrence` without `occurrenceField`) stayed in US3.
+- **G1/G3/G4** — added `determinism.test.ts` (20 identical invocations must be
+  byte-identical, plus a static check that `backend/src/engine/` references no
+  `Date`/`Math.random`/`process.env`/network API), `condition-evaluator.test.ts`,
+  and `scoring.test.ts` including the overlapping-factors edge case.
+- **G2** — added a Polish task validating `risk-kb.json` against
+  `contracts/risk-kb.schema.json` and handler responses against the OpenAPI file,
+  so the published contracts cannot drift from the Zod runtime authority.
+
+**What I changed:**
+Accepted as-is. The remediation set was reviewed finding-by-finding before
+approval rather than applied wholesale on trust.
+
+**What I rejected and why:**
+
+- **I2** — the agent offered a new FR-010c to give the `startsWith` operator its
+  own functional requirement. Rejected: FR-010/FR-010a already require the
+  operator set to be KB-declared and open to extension, so naming one operator in
+  the spec would push an implementation detail up into the requirements and invite
+  a new FR for every future operator.
+- **A1 / D1** — flagged by the analysis as no-action; not applied.
+- The agent's first instinct on C1 was to relax the User Story 1 checkpoint
+  wording to "partial demo". Rejected outright — Principle III is non-negotiable
+  and the constitution says a conflict is resolved by changing the spec, plan or
+  tasks, never by diluting the principle. The fix had to move the work earlier,
+  not lower the bar.
+
+**Why (reasoning):**
+Every edit tightens a constraint rather than loosening one. C1 and C2 both existed
+because *sequencing* silently violated a MUST that the artifacts stated correctly
+in prose — the response contract and the KB safety guarantees are unconditional,
+so no phase boundary may sit in front of them. FR-002a exists so that "outside
+accepted ranges" is measurable and SC-007 has an agreed threshold to test against;
+the single pinned postcode regex exists so client and server cannot drift into
+disagreeing about validity. The band `id`/`label` split keeps customer-facing
+wording in the KB where Principle I requires it, so rewording a band for customers
+is a KB edit and not a contract change. The determinism task makes SC-008
+falsifiable rather than aspirational.
+
+No scoring value, band boundary or factor identifier was introduced into any task
+description; the new tasks explicitly forbid them, and the contract test task
+requires expected values to be computed from the loaded KB rather than restated as
+literals.
+
+**Validation:** Re-ran the tasks.md format validator — 70 tasks, IDs sequential
+T001–T070 with zero malformed lines, and story-label distribution exactly as
+designed (29 unlabelled across Setup 7 + Foundational 14 + Polish 8; US1 21,
+US2 3, US3 12, US4 5). No source code exists yet, so there is no test suite to run.
+**Files touched:** `specs/001-policy-quote-app/spec.md`, `specs/001-policy-quote-app/plan.md`, `specs/001-policy-quote-app/data-model.md`, `specs/001-policy-quote-app/tasks.md`, `AGENT_LOG.md`

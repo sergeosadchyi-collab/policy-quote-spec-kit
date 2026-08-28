@@ -16,21 +16,34 @@ The details a customer submits. Validated by Zod before reaching the engine
 
 | Field | Type | Validation | Source |
 |-------|------|-----------|--------|
-| `customerName` | `string` | trimmed, 1–100 chars, non-empty | FR-001 |
-| `age` | `number` | integer, 18–120 inclusive | FR-001, FR-002 |
+| `customerName` | `string` | trimmed, 1–100 chars, non-empty | FR-001, FR-002a |
+| `age` | `number` | integer, 18–120 inclusive | FR-001, FR-002a |
 | `propertyType` | `'House' \| 'Flat' \| 'Bungalow'` | enum, exact match | FR-001 |
-| `propertyValue` | `number` | finite, > 0, ≤ 100,000,000 | FR-001, FR-002 |
+| `propertyValue` | `number` | finite, > 0, ≤ 100,000,000 | FR-001, FR-002a |
 | `postcode` | `string` | trimmed, uppercased, UK postcode pattern | FR-001, Assumptions |
-| `previousClaims` | `number` | integer, ≥ 0, ≤ 50 | FR-001, FR-002 |
+| `previousClaims` | `number` | integer, ≥ 0, ≤ 50 | FR-001, FR-002a |
 
 **Notes**
 
-- `age` lower bound of 18 encodes "implausible age" from FR-002 scenario 2 for
-  a policyholder; the upper bound of 120 rejects nonsense without excluding the
-  over-75 risk factor the KB targets.
+- The numeric bounds above are fixed by **FR-002a**, which exists so that
+  "outside accepted ranges" is measurable and SC-007 has an agreed threshold.
+  The age range of 18–120 rejects nonsense without excluding the over-75 risk
+  factor the KB targets.
+- **Canonical postcode pattern** — one definition, used by both the server
+  (`request-schema.ts`) and the client form, which MUST import or restate this
+  exact rule rather than invent its own:
+
+  ```
+  /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/
+  ```
+
+  Applied **after** trim + uppercase normalisation. It accepts the standard UK
+  outward/inward forms with an optional separating space, and deliberately does
+  not attempt to validate against the live postcode file — the spec treats
+  postcode as captured, not verified.
 - `postcode` is normalised (trim + uppercase) **before** evaluation so that a
-  future prefix-matching geography factor behaves consistently. It is captured
-  but not scored by default (spec Assumptions).
+  prefix-matching geography factor behaves consistently. It is captured but not
+  scored by default (spec Assumptions).
 - No field is optional. Missing fields produce a field-level validation error,
   never a defaulted value — a defaulted value would silently mis-price.
 

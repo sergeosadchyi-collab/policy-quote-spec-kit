@@ -82,8 +82,8 @@ human time, with no documentation or account (SC-001).
   change (Principle VI).
 
 **Scale/Scope**: Single line of business (home), single currency (GBP), single
-locale (UK). 4 user stories, 30 functional requirements, one HTTP endpoint,
-~12 backend modules, ~5 frontend components. Anonymous public traffic; no
+locale (UK). 4 user stories, 31 functional requirements, one HTTP endpoint,
+~19 backend source modules, ~5 frontend components. Anonymous public traffic; no
 concurrency or throughput target beyond the 2-second perceived latency.
 
 ### Planning decisions taken here
