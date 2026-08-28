@@ -1,0 +1,30 @@
+{
+  "name": "policyquote-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PolicyQuote backend — Lambda-compatible quote handler with a thin node:http adapter",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.ts",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "semver": "^7.6.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.0",
+    "@types/semver": "^7.5.8",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "jest": "^30.0.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.0",
+    "yaml": "^2.9.0"
+  }
+}

@@ -221,8 +221,12 @@ specific, human-readable message is shown and no quote is produced.
 - **FR-004a**: System MUST treat the annual premium as authoritative: the formula
   in FR-003 is evaluated to produce the annual figure, which is rounded to two
   decimal places; the monthly figure is then derived as the rounded annual
-  premium divided by twelve, rounded to two decimal places. Twelve monthly
-  instalments MUST therefore never exceed the quoted annual premium.
+  premium divided by twelve, rounded **down** to two decimal places. Twelve
+  monthly instalments MUST therefore never exceed the quoted annual premium.
+  Rounding the monthly figure to the *nearest* penny would breach that
+  guarantee — an annual premium of £360.10 would yield £30.01 a month and
+  £360.12 a year — so the direction is part of the requirement, not an
+  implementation detail.
 - **FR-004b**: System MUST apply rounding only at the two points named in
   FR-004a. Intermediate values — the risk score, the multiplier product, and the
   coverage load — MUST NOT be rounded, so that results remain reproducible.

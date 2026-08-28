@@ -1,0 +1,68 @@
+.masthead {
+  padding: 2.5rem 0 1.75rem;
+  border-bottom: 1px solid var(--pq-rule);
+}
+
+.masthead__brand {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pq-accent);
+}
+
+.masthead__title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.masthead__strapline {
+  margin: 0;
+  max-width: 46ch;
+  color: var(--pq-ink-muted);
+}
+
+.layout {
+  display: grid;
+  gap: 2rem;
+  padding: 2rem 0 3rem;
+  align-items: start;
+}
+
+/* Two columns once there is room for them; single column is the default so the
+   small-screen experience needs no override. Refined further in T065. */
+@media (min-width: 52rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  padding: 2rem 1.75rem;
+  color: var(--pq-ink-muted);
+  background: var(--pq-surface);
+  border: 1px dashed var(--pq-rule);
+  border-radius: var(--pq-radius);
+  text-align: center;
+}
+
+.placeholder p {
+  margin: 0;
+  max-width: 28ch;
+}
+
+.colophon {
+  padding: 1.25rem 0 2.5rem;
+  border-top: 1px solid var(--pq-rule);
+  font-size: 0.8125rem;
+  color: var(--pq-ink-muted);
+}
+
+.colophon p {
+  margin: 0;
+}

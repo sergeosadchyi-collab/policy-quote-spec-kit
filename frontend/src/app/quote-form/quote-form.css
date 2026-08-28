@@ -1,0 +1,108 @@
+.quote-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  padding: 1.75rem;
+  background: var(--pq-surface);
+  border: 1px solid var(--pq-rule);
+  border-radius: var(--pq-radius);
+  box-shadow: var(--pq-shadow);
+}
+
+.quote-form__title {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pq-ink-muted);
+}
+
+.field__input {
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  color: var(--pq-ink);
+  background: var(--pq-surface);
+  border: 1px solid var(--pq-rule);
+  border-radius: 0.5rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.field__input:focus-visible {
+  outline: none;
+  border-color: var(--pq-accent);
+  box-shadow: 0 0 0 3px var(--pq-accent-soft);
+}
+
+.quote-form__submit {
+  margin-top: 0.35rem;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--pq-accent);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.quote-form__submit:hover:not(:disabled) {
+  background: var(--pq-accent-dark);
+}
+
+.quote-form__submit:disabled {
+  background: var(--pq-rule);
+  color: var(--pq-ink-muted);
+  cursor: not-allowed;
+}
+
+.quote-form__error {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--pq-danger);
+  background: var(--pq-danger-bg);
+  border-radius: 0.5rem;
+}
+
+.field__error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--pq-danger);
+}
+
+.field__input[aria-invalid='true'] {
+  border-color: var(--pq-danger);
+}
+
+.field__input[aria-invalid='true']:focus-visible {
+  box-shadow: 0 0 0 3px var(--pq-danger-bg);
+}
+
+/* Comfortable touch targets on small screens; 16px input text also stops iOS
+   Safari zooming the viewport on focus. */
+@media (max-width: 30rem) {
+  .quote-form,
+  .quote-result {
+    padding: 1.25rem;
+  }
+
+  .field__input {
+    font-size: 16px;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .quote-form__submit {
+    padding: 0.9rem 1rem;
+  }
+}

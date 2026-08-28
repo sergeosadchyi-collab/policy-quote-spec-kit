@@ -58,13 +58,13 @@ Three prohibitions apply to every implementation task below:
 
 **Purpose**: Project initialization and toolchain configuration
 
-- [ ] T001 Create the two-package structure per plan.md: `backend/src/`, `backend/tests/`, `frontend/` directories at the repository root
-- [ ] T002 [P] Initialize the backend package in `backend/package.json`: dependencies `zod@^4`, `semver`; devDependencies `typescript@^5.6`, `jest@^30`, `ts-jest`, `@types/node`, `@types/jest`, `@types/semver`; scripts `"start": "node src/server.ts"` and `"test": "jest"` (Node 22.22.3 strips types natively — no build step, verified working)
-- [ ] T003 [P] Configure `backend/tsconfig.json` with `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `erasableSyntaxOnly`, `allowImportingTsExtensions`, `noEmit`, `module: "nodenext"` — all relative imports must carry an explicit `.ts` extension for native type stripping
-- [ ] T004 [P] Configure `backend/jest.config.js` for `ts-jest` with `roots: ["<rootDir>/tests"]` and resolution of explicit `.ts` import specifiers
-- [ ] T005 [P] Scaffold the Angular 20.3.x standalone application in `frontend/` (no NgModules, CSS styling, no UI component library), with `"start": "ng serve"` in `frontend/package.json`
-- [ ] T006 [P] Create `frontend/proxy.conf.json` routing `/policy/quote` to `http://localhost:3000` and reference it from the `serve` options in `frontend/angular.json` (removes CORS entirely — research R4)
-- [ ] T007 [P] Configure zoneless bootstrap in `frontend/src/main.ts` using `bootstrapApplication` with `provideZonelessChangeDetection()` and `provideHttpClient()`
+- [X] T001 Create the two-package structure per plan.md: `backend/src/`, `backend/tests/`, `frontend/` directories at the repository root
+- [X] T002 [P] Initialize the backend package in `backend/package.json`: dependencies `zod@^4`, `semver`; devDependencies `typescript@^5.6`, `jest@^30`, `ts-jest`, `@types/node`, `@types/jest`, `@types/semver`; scripts `"start": "node src/server.ts"` and `"test": "jest"` (Node 22.22.3 strips types natively — no build step, verified working)
+- [X] T003 [P] Configure `backend/tsconfig.json` with `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `erasableSyntaxOnly`, `allowImportingTsExtensions`, `noEmit`, `module: "nodenext"` — all relative imports must carry an explicit `.ts` extension for native type stripping
+- [X] T004 [P] Configure `backend/jest.config.js` for `ts-jest` with `roots: ["<rootDir>/tests"]` and resolution of explicit `.ts` import specifiers
+- [X] T005 [P] Scaffold the Angular 20.3.x standalone application in `frontend/` (no NgModules, CSS styling, no UI component library), with `"start": "ng serve"` in `frontend/package.json`
+- [X] T006 [P] Create `frontend/proxy.conf.json` routing `/policy/quote` to `http://localhost:3000` and reference it from the `serve` options in `frontend/angular.json` (removes CORS entirely — research R4)
+- [X] T007 [P] Configure zoneless bootstrap in `frontend/src/main.ts` using `bootstrapApplication` with `provideZonelessChangeDetection()` and `provideHttpClient()`
 
 ---
 
@@ -76,20 +76,20 @@ wait for a later story. Delivers no user-facing value on its own.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T008 Author the initial Knowledge Base at `risk-kb.json` (repository root) per `contracts/risk-kb.schema.json`: `version: "1.0.0"`, `basePremium`, `coverageLoadFactor`, three bands (each with `id`, `label`, `min`, `max`, `riskMultiplier`, `summaryTemplate`) that are contiguous and non-overlapping, and leaf-condition factors whose combinations can reach all three bands
-- [ ] T009 [P] Define the narrow Lambda transport types `QuoteApiEvent`, `QuoteApiContext`, `QuoteApiResponse` in `backend/src/types/lambda.ts` per `contracts/lambda-handler.md` §1
-- [ ] T010 [P] Define `KbNotFoundError`, `KbMalformedError`, `KbUnsupportedVersionError` as distinct classes in `backend/src/kb/kb-errors.ts` (the version failure is a separate spec edge case from the malformed failure and must carry both the version found and the range expected)
-- [ ] T011 [P] Publish the closed summary-placeholder set as a frozen constant in `backend/src/engine/summary-placeholders.ts` per data-model.md §10 — consumed by KB cross-validation (T014) and, later, the summary composer (T038)
-- [ ] T012 Define the Zod Knowledge Base schema in `backend/src/kb/kb-schema.ts` with all types exported via `z.infer<>` — KB root, `RiskBand`, `RiskFactor`, and **leaf conditions only** at this stage (the recursive group union arrives in US3); no hand-written interface may duplicate a schema
-- [ ] T013 Implement `loadKnowledgeBase(filePath)` in `backend/src/kb/kb-loader.ts`: read file → `JSON.parse` → Zod validate, throwing the typed errors from T010 at each step (contracts/lambda-handler.md §3)
-- [ ] T014 Implement the schema-independent checks in `backend/src/kb/kb-cross-validation.ts` — band contiguity and non-overlap, unique factor ids, and every `summaryTemplate` placeholder belonging to the T011 set — each error naming the offending node; call it from `kb-loader.ts` (FR-012, FR-014b)
-- [ ] T015 Define `SUPPORTED_KB_VERSION_RANGE` in `backend/src/kb/supported-versions.ts` and enforce it with `semver.satisfies()` in `backend/src/kb/kb-loader.ts` **after** structural validation, failing startup with the version found and the range expected, with no coercion or downgrade (FR-013a, FR-013b)
-- [ ] T016 [P] KB validation tests in `backend/tests/kb/kb-validation.test.ts` covering the failures reachable at this phase: malformed JSON, band gap, band overlap, duplicate factor id, unknown summary placeholder, and unsupported version reporting found-vs-expected — plus an **empty `factors` array succeeding** as a valid zero-score lowest-band quote (spec edge case)
-- [ ] T017 Implement the `node:http` adapter in `backend/src/server.ts` — collect the body, build a `QuoteApiEvent`, call the handler, write status/headers/body, and nothing else; it must contain no routing decision that affects the response body, no validation, and no error branch (contracts/lambda-handler.md §2)
-- [ ] T018 Implement the handler skeleton exporting `handler(event, context)` in `backend/src/handler.ts`: 405 for non-POST, structured 500 for unexpected faults, never throwing; the KB loads once at module init and any KB error writes to stderr and exits non-zero
-- [ ] T019 [P] Define `QuoteResult`, `CoverageDetails`, `AppliedFactor`, `ValidationErrorResponse` and `ErrorResponse` types in `backend/src/api/response-types.ts` per `contracts/policy-quote.openapi.yaml`
-- [ ] T020 [P] Mirror the API contract types in `frontend/src/app/models/quote.ts`
-- [ ] T021 [P] Create the root standalone shell component `frontend/src/app/app.ts` with hand-authored global CSS (no Material, PrimeNG or Bootstrap — Principle V)
+- [X] T008 Author the initial Knowledge Base at `risk-kb.json` (repository root) per `contracts/risk-kb.schema.json`: `version: "1.0.0"`, `basePremium`, `coverageLoadFactor`, three bands (each with `id`, `label`, `min`, `max`, `riskMultiplier`, `summaryTemplate`) that are contiguous and non-overlapping, and leaf-condition factors whose combinations can reach all three bands
+- [X] T009 [P] Define the narrow Lambda transport types `QuoteApiEvent`, `QuoteApiContext`, `QuoteApiResponse` in `backend/src/types/lambda.ts` per `contracts/lambda-handler.md` §1
+- [X] T010 [P] Define `KbNotFoundError`, `KbMalformedError`, `KbUnsupportedVersionError` as distinct classes in `backend/src/kb/kb-errors.ts` (the version failure is a separate spec edge case from the malformed failure and must carry both the version found and the range expected)
+- [X] T011 [P] Publish the closed summary-placeholder set as a frozen constant in `backend/src/engine/summary-placeholders.ts` per data-model.md §10 — consumed by KB cross-validation (T014) and, later, the summary composer (T038)
+- [X] T012 Define the Zod Knowledge Base schema in `backend/src/kb/kb-schema.ts` with all types exported via `z.infer<>` — KB root, `RiskBand`, `RiskFactor`, and **leaf conditions only** at this stage (the recursive group union arrives in US3); no hand-written interface may duplicate a schema
+- [X] T013 Implement `loadKnowledgeBase(filePath)` in `backend/src/kb/kb-loader.ts`: read file → `JSON.parse` → Zod validate, throwing the typed errors from T010 at each step (contracts/lambda-handler.md §3)
+- [X] T014 Implement the schema-independent checks in `backend/src/kb/kb-cross-validation.ts` — band contiguity and non-overlap, unique factor ids, and every `summaryTemplate` placeholder belonging to the T011 set — each error naming the offending node; call it from `kb-loader.ts` (FR-012, FR-014b)
+- [X] T015 Define `SUPPORTED_KB_VERSION_RANGE` in `backend/src/kb/supported-versions.ts` and enforce it with `semver.satisfies()` in `backend/src/kb/kb-loader.ts` **after** structural validation, failing startup with the version found and the range expected, with no coercion or downgrade (FR-013a, FR-013b)
+- [X] T016 [P] KB validation tests in `backend/tests/kb/kb-validation.test.ts` covering the failures reachable at this phase: malformed JSON, band gap, band overlap, duplicate factor id, unknown summary placeholder, and unsupported version reporting found-vs-expected — plus an **empty `factors` array succeeding** as a valid zero-score lowest-band quote (spec edge case)
+- [X] T017 Implement the `node:http` adapter in `backend/src/server.ts` — collect the body, build a `QuoteApiEvent`, call the handler, write status/headers/body, and nothing else; it must contain no routing decision that affects the response body, no validation, and no error branch (contracts/lambda-handler.md §2)
+- [X] T018 Implement the handler skeleton exporting `handler(event, context)` in `backend/src/handler.ts`: 405 for non-POST, structured 500 for unexpected faults, never throwing; the KB loads once at module init and any KB error writes to stderr and exits non-zero
+- [X] T019 [P] Define `QuoteResult`, `CoverageDetails`, `AppliedFactor`, `ValidationErrorResponse` and `ErrorResponse` types in `backend/src/api/response-types.ts` per `contracts/policy-quote.openapi.yaml`
+- [X] T020 [P] Mirror the API contract types in `frontend/src/app/models/quote.ts`
+- [X] T021 [P] Create the root standalone shell component `frontend/src/app/app.ts` with hand-authored global CSS (no Material, PrimeNG or Bootstrap — Principle V)
 
 **Checkpoint**: Backend starts, **refuses to start** on a malformed KB, a KB with band gaps/overlaps, a duplicate factor id, a bad placeholder, or an unsupported version; answers 405 on the wrong method. Frontend serves and proxies. No quote is produced yet.
 
@@ -112,30 +112,30 @@ a fresh quote replaces the previous one.
 
 ### Tests for User Story 1
 
-- [ ] T022 [P] [US1] Unit tests for `roundToPence` in `backend/tests/unit/money.test.ts`, including the `1.005` half-up case that naive `Math.round(v*100)/100` gets wrong
-- [ ] T023 [P] [US1] Unit tests for every leaf operator (`eq`, `gt`, `gte`, `between`, `outside range`) in `backend/tests/unit/operators.test.ts`, asserting `between` and `outside range` are inclusive/exclusive at the exact bounds
-- [ ] T024 [P] [US1] Unit tests for leaf dispatch through the operator table in `backend/tests/unit/condition-evaluator.test.ts`, including an unknown field and an unknown operator being rejected rather than silently evaluating false (Principle IV requires this unit be independently testable)
-- [ ] T025 [P] [US1] Unit tests for `scoreRequest` in `backend/tests/unit/scoring.test.ts`: point accumulation across multiple factors, `appliedFactors` contents and ordering, an empty KB factor list yielding a zero score, and **two overlapping factors both applying and both being listed** (spec edge case)
-- [ ] T026 [P] [US1] Unit tests for band resolution in `backend/tests/unit/band-resolver.test.ts` covering a score inside a band, a score exactly on each boundary, and a score above the top band clamping to the highest band rather than failing
-- [ ] T027 [P] [US1] Unit tests for the premium calculator in `backend/tests/unit/premium-calculator.test.ts` asserting rounding happens at exactly the two points in FR-004a/b and that `monthlyPremium × 12 ≤ annualPremium`
-- [ ] T028 [P] [US1] Unit tests for the summary composer in `backend/tests/unit/summary-composer.test.ts`: every published placeholder substitutes correctly, factor descriptions are appended, and an unknown placeholder raises a validation failure rather than substituting empty text (FR-014a, FR-014b)
-- [ ] T029 [P] [US1] Determinism tests in `backend/tests/unit/determinism.test.ts`: invoke `handler()` 20 times with an identical event and assert byte-identical response bodies, and assert no reference to `Date`, `Math.random`, `process.env` or network APIs exists anywhere under `backend/src/engine/` (SC-008, FR-020, Principle V)
-- [ ] T030 [P] [US1] Contract tests in `backend/tests/contract/handler-bands.test.ts` invoking `handler()` directly with constructed events for one profile per band (STANDARD, ELEVATED, HIGH_RISK), asserting the **full** Principle III payload is present — `monthlyPremium`, `annualPremium`, `riskBand`, `riskBandLabel`, `riskScore`, `riskSummary`, `coverageDetails`, `appliedFactors`, `kbVersion` — that `appliedFactors[].points` sums exactly to `riskScore`, and that a no-match profile returns an empty `appliedFactors` array rather than an error; **expected values computed from the loaded KB**, never restated as literals (SC-006, SC-005, Principle VII)
+- [X] T022 [P] [US1] Unit tests for `roundToPence` in `backend/tests/unit/money.test.ts`, including the `1.005` half-up case that naive `Math.round(v*100)/100` gets wrong
+- [X] T023 [P] [US1] Unit tests for every leaf operator (`eq`, `gt`, `gte`, `between`, `outside range`) in `backend/tests/unit/operators.test.ts`, asserting `between` and `outside range` are inclusive/exclusive at the exact bounds
+- [X] T024 [P] [US1] Unit tests for leaf dispatch through the operator table in `backend/tests/unit/condition-evaluator.test.ts`, including an unknown field and an unknown operator being rejected rather than silently evaluating false (Principle IV requires this unit be independently testable)
+- [X] T025 [P] [US1] Unit tests for `scoreRequest` in `backend/tests/unit/scoring.test.ts`: point accumulation across multiple factors, `appliedFactors` contents and ordering, an empty KB factor list yielding a zero score, and **two overlapping factors both applying and both being listed** (spec edge case)
+- [X] T026 [P] [US1] Unit tests for band resolution in `backend/tests/unit/band-resolver.test.ts` covering a score inside a band, a score exactly on each boundary, and a score above the top band clamping to the highest band rather than failing
+- [X] T027 [P] [US1] Unit tests for the premium calculator in `backend/tests/unit/premium-calculator.test.ts` asserting rounding happens at exactly the two points in FR-004a/b and that `monthlyPremium × 12 ≤ annualPremium`
+- [X] T028 [P] [US1] Unit tests for the summary composer in `backend/tests/unit/summary-composer.test.ts`: every published placeholder substitutes correctly, factor descriptions are appended, and an unknown placeholder raises a validation failure rather than substituting empty text (FR-014a, FR-014b)
+- [X] T029 [P] [US1] Determinism tests in `backend/tests/unit/determinism.test.ts`: invoke `handler()` 20 times with an identical event and assert byte-identical response bodies, and assert no reference to `Date`, `Math.random`, `process.env` or network APIs exists anywhere under `backend/src/engine/` (SC-008, FR-020, Principle V)
+- [X] T030 [P] [US1] Contract tests in `backend/tests/contract/handler-bands.test.ts` invoking `handler()` directly with constructed events for one profile per band (STANDARD, ELEVATED, HIGH_RISK), asserting the **full** Principle III payload is present — `monthlyPremium`, `annualPremium`, `riskBand`, `riskBandLabel`, `riskScore`, `riskSummary`, `coverageDetails`, `appliedFactors`, `kbVersion` — that `appliedFactors[].points` sums exactly to `riskScore`, and that a no-match profile returns an empty `appliedFactors` array rather than an error; **expected values computed from the loaded KB**, never restated as literals (SC-006, SC-005, Principle VII)
 
 ### Implementation for User Story 1
 
-- [ ] T031 [P] [US1] Implement the Zod `QuoteRequest` schema with trim/uppercase normalisation in `backend/src/api/request-schema.ts` per data-model.md §1, enforcing the FR-002a bounds and the canonical postcode pattern defined there, so the engine only ever sees normalised input
-- [ ] T032 [P] [US1] Implement `roundToPence` with epsilon-corrected half-up rounding in `backend/src/engine/money.ts` (research R8)
-- [ ] T033 [P] [US1] Implement the frozen `LEAF_OPERATORS` lookup record in `backend/src/engine/operators.ts` — a `Record<LeafOperator, fn>`, never a `switch` (Principle I)
-- [ ] T034 [US1] Implement `evaluateCondition(condition, request)` with leaf dispatch through the operator table in `backend/src/engine/condition-evaluator.ts` (depends on T033)
-- [ ] T035 [US1] Implement `scoreRequest(kb, request)` in `backend/src/engine/scoring.ts`, iterating `kb.factors` generically and returning `{ riskScore, appliedFactors }` with no per-factor branching (depends on T034)
-- [ ] T036 [US1] Implement `resolveBand(kb, score)` in `backend/src/engine/band-resolver.ts` using inclusive bounds and identifying the highest band **positionally** — no band `id` may appear in this file
-- [ ] T037 [US1] Implement `calculatePremium(kb, band)` in `backend/src/engine/premium-calculator.ts` as `basePremium × riskMultiplier × coverageLoadFactor`, rounding the annual figure then deriving monthly from the rounded annual (depends on T032, T036)
-- [ ] T038 [US1] Implement `composeSummary()` in `backend/src/engine/summary-composer.ts` — substitute the T011 placeholder set into the resolved band's `summaryTemplate`, then append the applied factor descriptions; no prose may be authored in this file (FR-014a)
-- [ ] T039 [US1] Wire the complete pipeline in `backend/src/handler.ts`: parse → score → resolve band → calculate premium → compose summary → 200 carrying **all** of `monthlyPremium`, `annualPremium`, `riskBand`, `riskBandLabel`, `riskScore`, `riskSummary`, `coverageDetails` and `appliedFactors`, plus the active `kbVersion`; `appliedFactors[].points` is the contributed total (Principle III, FR-005, FR-005a, FR-013) (depends on T031, T035, T037, T038)
-- [ ] T040 [P] [US1] Implement `QuoteApiService.requestQuote()` posting to the relative path `/policy/quote` via `HttpClient` in `frontend/src/app/services/quote-api.ts`
-- [ ] T041 [US1] Implement `QuoteFormComponent` in `frontend/src/app/quote-form/` — a reactive form over the six fields, with `loading`, `quoteResult` and `errorMessage` as `signal()` and `canSubmit` as `computed()` gating the submit control so duplicate submission is impossible by derived state (FR-017); no `BehaviorSubject`/`Subject`
-- [ ] T042 [US1] Implement `QuoteResultComponent` in `frontend/src/app/quote-result/` displaying monthly and annual premium in pounds, replacing any previous result on resubmission (depends on T041)
+- [X] T031 [P] [US1] Implement the Zod `QuoteRequest` schema with trim/uppercase normalisation in `backend/src/api/request-schema.ts` per data-model.md §1, enforcing the FR-002a bounds and the canonical postcode pattern defined there, so the engine only ever sees normalised input
+- [X] T032 [P] [US1] Implement `roundToPence` with epsilon-corrected half-up rounding in `backend/src/engine/money.ts` (research R8)
+- [X] T033 [P] [US1] Implement the frozen `LEAF_OPERATORS` lookup record in `backend/src/engine/operators.ts` — a `Record<LeafOperator, fn>`, never a `switch` (Principle I)
+- [X] T034 [US1] Implement `evaluateCondition(condition, request)` with leaf dispatch through the operator table in `backend/src/engine/condition-evaluator.ts` (depends on T033)
+- [X] T035 [US1] Implement `scoreRequest(kb, request)` in `backend/src/engine/scoring.ts`, iterating `kb.factors` generically and returning `{ riskScore, appliedFactors }` with no per-factor branching (depends on T034)
+- [X] T036 [US1] Implement `resolveBand(kb, score)` in `backend/src/engine/band-resolver.ts` using inclusive bounds and identifying the highest band **positionally** — no band `id` may appear in this file
+- [X] T037 [US1] Implement `calculatePremium(kb, band)` in `backend/src/engine/premium-calculator.ts` as `basePremium × riskMultiplier × coverageLoadFactor`, rounding the annual figure then deriving monthly from the rounded annual (depends on T032, T036)
+- [X] T038 [US1] Implement `composeSummary()` in `backend/src/engine/summary-composer.ts` — substitute the T011 placeholder set into the resolved band's `summaryTemplate`, then append the applied factor descriptions; no prose may be authored in this file (FR-014a)
+- [X] T039 [US1] Wire the complete pipeline in `backend/src/handler.ts`: parse → score → resolve band → calculate premium → compose summary → 200 carrying **all** of `monthlyPremium`, `annualPremium`, `riskBand`, `riskBandLabel`, `riskScore`, `riskSummary`, `coverageDetails` and `appliedFactors`, plus the active `kbVersion`; `appliedFactors[].points` is the contributed total (Principle III, FR-005, FR-005a, FR-013) (depends on T031, T035, T037, T038)
+- [X] T040 [P] [US1] Implement `QuoteApiService.requestQuote()` posting to the relative path `/policy/quote` via `HttpClient` in `frontend/src/app/services/quote-api.ts`
+- [X] T041 [US1] Implement `QuoteFormComponent` in `frontend/src/app/quote-form/` — a reactive form over the six fields, with `loading`, `quoteResult` and `errorMessage` as `signal()` and `canSubmit` as `computed()` gating the submit control so duplicate submission is impossible by derived state (FR-017); no `BehaviorSubject`/`Subject`
+- [X] T042 [US1] Implement `QuoteResultComponent` in `frontend/src/app/quote-result/` displaying monthly and annual premium in pounds, replacing any previous result on resubmission (depends on T041)
 
 **Checkpoint**: User Story 1 is fully functional and the API contract is complete and Principle III-compliant. **This is a genuinely releasable MVP.**
 
@@ -158,9 +158,9 @@ a profile triggering nothing and confirm the STANDARD badge with an explicit
 
 ### Implementation for User Story 2
 
-- [ ] T043 [P] [US2] Implement `RiskBandBadgeComponent` in `frontend/src/app/risk-band-badge/` with signal `input.required<string>()` for `riskBand` (styling hook) and `label` (rendered text), plus hand-authored per-band CSS and neutral default styling for an unrecognised band id, so a band added to the KB renders without a frontend change (FR-015, FR-006)
-- [ ] T044 [P] [US2] Implement `AppliedFactorsComponent` in `frontend/src/app/applied-factors/` rendering each `description` **verbatim from the response** with an explicit "no risk factors applied" empty state — no id→text map, dictionary or `switch` is permitted here (FR-016, SC-005)
-- [ ] T045 [US2] Extend `frontend/src/app/quote-result/` to render the badge, the risk summary, and the coverage breakdown (base premium, risk multiplier, coverage load factor, annual figure) so a customer can reconcile the arithmetic (FR-005a) (depends on T043, T044)
+- [X] T043 [P] [US2] Implement `RiskBandBadgeComponent` in `frontend/src/app/risk-band-badge/` with signal `input.required<string>()` for `riskBand` (styling hook) and `label` (rendered text), plus hand-authored per-band CSS and neutral default styling for an unrecognised band id, so a band added to the KB renders without a frontend change (FR-015, FR-006)
+- [X] T044 [P] [US2] Implement `AppliedFactorsComponent` in `frontend/src/app/applied-factors/` rendering each `description` **verbatim from the response** with an explicit "no risk factors applied" empty state — no id→text map, dictionary or `switch` is permitted here (FR-016, SC-005)
+- [X] T045 [US2] Extend `frontend/src/app/quote-result/` to render the badge, the risk summary, and the coverage breakdown (base premium, risk multiplier, coverage load factor, annual figure) so a customer can reconcile the arithmetic (FR-005a) (depends on T043, T044)
 
 **Checkpoint**: User Stories 1 and 2 both work independently. The quote is now explainable to a customer.
 
@@ -182,21 +182,21 @@ changes the score — then confirm `git diff` touches `risk-kb.json` only.
 
 ### Tests for User Story 3
 
-- [ ] T046 [P] [US3] Unit tests for `all`/`any`/`not` combinators and multi-level nesting in `backend/tests/unit/combinators.test.ts`, including the brief's "Flat AND over £500k" case
-- [ ] T047 [P] [US3] Unit tests for per-occurrence scoring in `backend/tests/unit/scoring-per-occurrence.test.ts`: points multiply by the nominated `occurrenceField`, a per-occurrence factor on a compound condition draws its count from that nominated field only, and a zero count contributes zero points **and is not listed** as applied
-- [ ] T048 [P] [US3] Unit test for the `startsWith` operator in `backend/tests/unit/operators-startswith.test.ts` against normalised postcode values (Principle VII requires a new operator to ship with evaluator tests)
-- [ ] T049 [P] [US3] Extend `backend/tests/kb/kb-validation.test.ts` with the failures that only become reachable with the recursive schema: unknown operator naming the offending factor, empty `all`/`any`/`not` group, and `perOccurrence` without `occurrenceField`
-- [ ] T050 [P] [US3] KB-only-change test in `backend/tests/contract/kb-only-change.test.ts`: load a fixture KB, load the same KB with one extra factor appended, and assert the new factor appears in `appliedFactors` and shifts `riskScore` with no engine code involved (SC-003, SC-004)
+- [X] T046 [P] [US3] Unit tests for `all`/`any`/`not` combinators and multi-level nesting in `backend/tests/unit/combinators.test.ts`, including the brief's "Flat AND over £500k" case
+- [X] T047 [P] [US3] Unit tests for per-occurrence scoring in `backend/tests/unit/scoring-per-occurrence.test.ts`: points multiply by the nominated `occurrenceField`, a per-occurrence factor on a compound condition draws its count from that nominated field only, and a zero count contributes zero points **and is not listed** as applied
+- [X] T048 [P] [US3] Unit test for the `startsWith` operator in `backend/tests/unit/operators-startswith.test.ts` against normalised postcode values (Principle VII requires a new operator to ship with evaluator tests)
+- [X] T049 [P] [US3] Extend `backend/tests/kb/kb-validation.test.ts` with the failures that only become reachable with the recursive schema: unknown operator naming the offending factor, empty `all`/`any`/`not` group, and `perOccurrence` without `occurrenceField`
+- [X] T050 [P] [US3] KB-only-change test in `backend/tests/contract/kb-only-change.test.ts`: load a fixture KB, load the same KB with one extra factor appended, and assert the new factor appears in `appliedFactors` and shifts `riskScore` with no engine code involved (SC-003, SC-004)
 
 ### Implementation for User Story 3
 
-- [ ] T051 [US3] Extend `backend/src/kb/kb-schema.ts` to the full recursive `Condition` union — leaf **or** group (`all`/`any`/`not`) via `z.lazy()` with an explicit type annotation, each group array non-empty — plus the `startsWith` leaf operator and the conditional requirement that `perOccurrence: true` implies `occurrenceField`; the union must stay closed (no `z.any()`/passthrough) so an unknown operator cannot reach the evaluator
-- [ ] T052 [US3] Implement the frozen `GROUP_COMBINATORS` lookup record for `all`, `any` and `not` in `backend/src/engine/combinators.ts`
-- [ ] T053 [US3] Make `evaluateCondition` recurse through the combinator table in `backend/src/engine/condition-evaluator.ts` so leaves and arbitrarily nested groups take the identical code path (FR-010b) (depends on T051, T052)
-- [ ] T054 [US3] Add `startsWith` to `LEAF_OPERATORS` in `backend/src/engine/operators.ts` as a one-entry table addition (depends on T051)
-- [ ] T055 [US3] Add per-occurrence multiplication to `backend/src/engine/scoring.ts` using the explicitly nominated `occurrenceField`, omitting zero-count factors from `appliedFactors` (FR-011)
-- [ ] T056 [US3] Extend `backend/src/kb/kb-cross-validation.ts` with the schema-dependent checks: every leaf `field` names a key of `QuoteRequest`, every operator is in the operator table, every group's array is non-empty, and `occurrenceField` names a numeric request field — each error naming the offending factor (FR-012)
-- [ ] T057 [US3] Extend `risk-kb.json` with a compound-condition factor (e.g. Flat AND value over £500,000) and a per-occurrence claims factor, exercising the capabilities added above
+- [X] T051 [US3] Extend `backend/src/kb/kb-schema.ts` to the full recursive `Condition` union — leaf **or** group (`all`/`any`/`not`) via `z.lazy()` with an explicit type annotation, each group array non-empty — plus the `startsWith` leaf operator and the conditional requirement that `perOccurrence: true` implies `occurrenceField`; the union must stay closed (no `z.any()`/passthrough) so an unknown operator cannot reach the evaluator
+- [X] T052 [US3] Implement the frozen `GROUP_COMBINATORS` lookup record for `all`, `any` and `not` in `backend/src/engine/combinators.ts`
+- [X] T053 [US3] Make `evaluateCondition` recurse through the combinator table in `backend/src/engine/condition-evaluator.ts` so leaves and arbitrarily nested groups take the identical code path (FR-010b) (depends on T051, T052)
+- [X] T054 [US3] Add `startsWith` to `LEAF_OPERATORS` in `backend/src/engine/operators.ts` as a one-entry table addition (depends on T051)
+- [X] T055 [US3] Add per-occurrence multiplication to `backend/src/engine/scoring.ts` using the explicitly nominated `occurrenceField`, omitting zero-count factors from `appliedFactors` (FR-011)
+- [X] T056 [US3] Extend `backend/src/kb/kb-cross-validation.ts` with the schema-dependent checks: every leaf `field` names a key of `QuoteRequest`, every operator is in the operator table, every group's array is non-empty, and `occurrenceField` names a numeric request field — each error naming the offending factor (FR-012)
+- [X] T057 [US3] Extend `risk-kb.json` with a compound-condition factor (e.g. Flat AND value over £500,000) and a per-occurrence claims factor, exercising the capabilities added above
 
 **Checkpoint**: All three stories work independently. The configurability claim is now both demonstrable and enforced.
 
@@ -213,14 +213,14 @@ a friendly error, cleared loading state, and a working retry without page reload
 
 ### Tests for User Story 4
 
-- [ ] T058 [P] [US4] Contract tests in `backend/tests/contract/handler-validation.test.ts` covering each invalid category against the FR-002a bounds — missing field, empty name, name over 100 characters, age below 18, age above 120, negative property value, property value over the ceiling, negative claim count, invalid property type, malformed postcode, `null` body, non-JSON body, JSON array body — asserting 400, a field-specific entry in `issues[]`, and **no premium figure anywhere in the response** (SC-007)
+- [X] T058 [P] [US4] Contract tests in `backend/tests/contract/handler-validation.test.ts` covering each invalid category against the FR-002a bounds — missing field, empty name, name over 100 characters, age below 18, age above 120, negative property value, property value over the ceiling, negative claim count, invalid property type, malformed postcode, `null` body, non-JSON body, JSON array body — asserting 400, a field-specific entry in `issues[]`, and **no premium figure anywhere in the response** (SC-007)
 
 ### Implementation for User Story 4
 
-- [ ] T059 [US4] Implement Zod-issue → `ValidationErrorResponse` translation in `backend/src/api/error-mapping.ts`, producing one `{ field, message }` entry per offending field with messages safe to display
-- [ ] T060 [US4] Return 400 with the mapped `issues[]` from `backend/src/handler.ts` for every parse or validation failure, confirming the handler still never throws (depends on T059)
-- [ ] T061 [US4] Add client-side validators to `frontend/src/app/quote-form/` mirroring the FR-002a bounds and reusing the canonical postcode pattern from data-model.md §1 rather than restating a different one, and surface server-returned `issues[]` against the named fields so a server-only rule still yields a field-specific message
-- [ ] T062 [US4] Handle network failure and 5xx in `frontend/src/app/quote-form/`: set a friendly `errorMessage`, clear `loading`, clear any stale `quoteResult`, and allow retry without a page reload (FR-018)
+- [X] T059 [US4] Implement Zod-issue → `ValidationErrorResponse` translation in `backend/src/api/error-mapping.ts`, producing one `{ field, message }` entry per offending field with messages safe to display
+- [X] T060 [US4] Return 400 with the mapped `issues[]` from `backend/src/handler.ts` for every parse or validation failure, confirming the handler still never throws (depends on T059)
+- [X] T061 [US4] Add client-side validators to `frontend/src/app/quote-form/` mirroring the FR-002a bounds and reusing the canonical postcode pattern from data-model.md §1 rather than restating a different one, and surface server-returned `issues[]` against the named fields so a server-only rule still yields a field-specific message
+- [X] T062 [US4] Handle network failure and 5xx in `frontend/src/app/quote-form/`: set a friendly `errorMessage`, clear `loading`, clear any stale `quoteResult`, and allow retry without a page reload (FR-018)
 
 **Checkpoint**: All four user stories are independently functional.
 
@@ -228,14 +228,14 @@ a friendly error, cleared loading state, and a working retry without page reload
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T063 [P] Write `README.md` at the repository root: both services running in five commands or fewer, and the `risk-kb.json` location and how to edit it (FR-019, FR-021, SC-009) — derive from `quickstart.md`
-- [ ] T064 [P] Write `SOLUTION.md` at the repository root — **maximum 300 words**: architecture decisions, KB schema design choices, agent skill rationale, and one thing you would improve with more time
-- [ ] T065 [P] Refine hand-authored CSS across `frontend/src/` for responsive desktop and mobile layouts, with form labels and error associations for accessibility — no UI component library
-- [ ] T066 Add contract-conformance tests in `backend/tests/contract/contract-conformance.test.ts`: validate the shipped `risk-kb.json` against `specs/001-policy-quote-app/contracts/risk-kb.schema.json`, and validate handler responses against the schemas in `contracts/policy-quote.openapi.yaml`, so the published contracts cannot drift from the Zod runtime authority
-- [ ] T067 Audit `backend/src/` and `frontend/src/` for constitution compliance: zero `any`, zero scoring constants, zero band boundaries, zero factor identifiers, and no `switch`/`if` chain branching per factor or per operator
-- [ ] T068 Run `npm --prefix backend test` and confirm the whole suite is green, including one asserting case per risk band
-- [ ] T069 Execute `quickstart.md` end to end on a clean checkout, including the flood-zone factor demonstration, and confirm `git diff` shows `risk-kb.json` only
-- [ ] T070 Verify `AGENT_LOG.md` has an entry per logical change with the summary table rows added, prompts quoted verbatim, and rejected output recorded (Principle VI)
+- [X] T063 [P] Write `README.md` at the repository root: both services running in five commands or fewer, and the `risk-kb.json` location and how to edit it (FR-019, FR-021, SC-009) — derive from `quickstart.md`
+- [X] T064 [P] Write `SOLUTION.md` at the repository root — **maximum 300 words**: architecture decisions, KB schema design choices, agent skill rationale, and one thing you would improve with more time
+- [X] T065 [P] Refine hand-authored CSS across `frontend/src/` for responsive desktop and mobile layouts, with form labels and error associations for accessibility — no UI component library
+- [X] T066 Add contract-conformance tests in `backend/tests/contract/contract-conformance.test.ts`: validate the shipped `risk-kb.json` against `specs/001-policy-quote-app/contracts/risk-kb.schema.json`, and validate handler responses against the schemas in `contracts/policy-quote.openapi.yaml`, so the published contracts cannot drift from the Zod runtime authority
+- [X] T067 Audit `backend/src/` and `frontend/src/` for constitution compliance: zero `any`, zero scoring constants, zero band boundaries, zero factor identifiers, and no `switch`/`if` chain branching per factor or per operator
+- [X] T068 Run `npm --prefix backend test` and confirm the whole suite is green, including one asserting case per risk band
+- [X] T069 Execute `quickstart.md` end to end on a clean checkout, including the flood-zone factor demonstration, and confirm `git diff` shows `risk-kb.json` only
+- [X] T070 Verify `AGENT_LOG.md` has an entry per logical change with the summary table rows added, prompts quoted verbatim, and rejected output recorded (Principle VI)
 
 ---
 

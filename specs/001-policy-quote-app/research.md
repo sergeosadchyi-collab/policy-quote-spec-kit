@@ -194,8 +194,15 @@ epsilon before rounding makes the half-up behaviour match what a human doing
 the arithmetic expects, and keeps output byte-identical across runs as
 Principle V requires.
 
-Monthly is derived from the **rounded** annual, guaranteeing
-`monthly × 12 ≤ annual` as FR-004a demands.
+Monthly is derived from the **rounded** annual. Note that half-up rounding of
+`annual ÷ 12` does **not** by itself satisfy FR-004a: an annual premium of
+`360.10` gives `30.008…`, which rounds up to `30.01` and yields
+`30.01 × 12 = 360.12`, exceeding the annual figure. FR-004a states the
+non-exceedance property as a MUST, so the monthly figure uses **directed
+rounding down** to the pence (`floorToPence`), while the annual figure uses
+half-up (`roundToPence`). Both are still "rounded to two decimal places" as
+FR-004a requires; the direction is what the invariant fixes. The customer is at
+most 11p a year better off, and never worse off, than the exact twelfth.
 
 **Alternatives considered**: Integer pence throughout — the textbook answer and
 genuinely more robust, but the KB authors write `basePremium: 300` and

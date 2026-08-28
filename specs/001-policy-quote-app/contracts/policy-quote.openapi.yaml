@@ -150,7 +150,9 @@ components:
       properties:
         monthlyPremium:
           type: number
-          description: Pounds, 2dp. Derived from the rounded annual premium.
+          description: Pounds, 2dp. Derived from the rounded annual premium by
+            dividing by twelve and rounding DOWN, so twelve instalments never
+            exceed the annual figure (FR-004a).
           examples: [30.00]
         annualPremium:
           type: number

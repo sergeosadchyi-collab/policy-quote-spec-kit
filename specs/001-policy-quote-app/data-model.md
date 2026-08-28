@@ -242,7 +242,7 @@ The successful response payload (FR-004, FR-005, FR-013).
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `monthlyPremium` | `number` | 2dp; derived as `annualPremium / 12`, rounded |
+| `monthlyPremium` | `number` | 2dp; derived as `annualPremium / 12`, rounded **down** so twelve instalments never exceed the annual figure (FR-004a) |
 | `annualPremium` | `number` | 2dp; authoritative (FR-004a) |
 | `riskBand` | `string` | resolved band `id` |
 | `riskBandLabel` | `string` | resolved band `label` |
