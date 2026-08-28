@@ -8,6 +8,7 @@ Format and rules are defined in `CLAUDE.md` → *Agent Logging Protocol*.
 | 1 | 2026-08-28 | docs | Agent logging protocol | accepted |
 | 2 | 2026-08-28 | docs | AGENTS.md universal entrypoint | accepted |
 | 3 | 2026-08-28 | docs | Implementation plan & Phase 0/1 design artifacts | accepted with edits |
+| 4 | 2026-08-28 | docs | Task breakdown (tasks.md) for 001-policy-quote-app | accepted with edits |
 
 ---
 
@@ -205,3 +206,96 @@ verified against the live npm registry, not assumed. `<!-- SPECKIT START/END -->
 markers confirmed intact in both pointer files. No code exists yet, so no tests
 to run.
 **Files touched:** `specs/001-policy-quote-app/plan.md`, `specs/001-policy-quote-app/research.md`, `specs/001-policy-quote-app/data-model.md`, `specs/001-policy-quote-app/quickstart.md`, `specs/001-policy-quote-app/contracts/policy-quote.openapi.yaml`, `specs/001-policy-quote-app/contracts/risk-kb.schema.json`, `specs/001-policy-quote-app/contracts/lambda-handler.md`, `specs/001-policy-quote-app/contracts/frontend-components.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `AGENT_LOG.md`
+
+---
+
+### Entry 4 — 2026-08-28 21:35 — Task breakdown (tasks.md) for 001-policy-quote-app
+
+**Agent/Model:** GitHub Copilot CLI / Claude Opus 5
+**Scope:** docs
+
+**Prompt given (verbatim):**
+> The user explicitly invoked the "/speckit-tasks" skill. Follow its instructions now.
+
+(invoked with empty user input)
+
+**Output received:**
+Checked the `before_tasks` extension hook — `speckit.git.commit` is optional and
+the working tree was clean (plan artifacts already committed), so it was reported
+and skipped. Ran `.specify/scripts/bash/setup-tasks.sh --json`, which reported all
+four optional design docs present.
+
+Generated `specs/001-policy-quote-app/tasks.md`: 65 tasks (T001–T065) across
+seven phases — Setup (7), Foundational (9), US1 (16), US2 (7), US3 (14), US4 (5),
+Polish (7). 34 tasks marked `[P]`. Includes a dependency graph, per-phase parallel
+opportunities, a worked parallel example for US1, and an MVP-first / incremental
+delivery strategy.
+
+Test tasks were included rather than treated as optional, because Constitution
+Principle VII mandates Jest coverage of all three bands, SC-006 requires an
+asserting test per band, and FR-012 requires each KB validation failure to be
+verifiable.
+
+**What I changed:**
+Three corrections made during the run rather than accepted as first drafted:
+
+1. **The TypeScript run strategy was verified, not assumed.** The first draft
+   added `tsx` as a devDependency to get a single `npm start` with no build step.
+   Before committing to that I tested Node 22.22.3's native type stripping in
+   `/tmp` with a two-file ESM/TS fixture — it worked, including `import type`
+   and explicit `.ts` extensions. Dropped `tsx` entirely: `"start": "node
+   src/server.ts"`. This removes a dependency and a build step, but it forces
+   `erasableSyntaxOnly` and explicit `.ts` import extensions, so those are now
+   spelled out in T003 and T004 rather than left to be discovered.
+2. **Rebalanced the story split.** My first cut put the whole scoring engine in
+   Foundational, which would have made US1 trivial and the phase boundaries
+   dishonest. Moved the engine into US1 (a premium *requires* a score, so it
+   cannot be deferred) and left Foundational as the genuine shared skeleton: KB
+   file, schema, loader, transport types, handler/adapter skeleton, app shell.
+   US2 then adds only the explanation *surfaces*, which matches the spec's own
+   acceptance scenarios — US1's scenarios mention only premiums, US2's mention
+   band, factors, summary and breakdown.
+3. **Added an explicit honesty note on story independence.** The template asserts
+   stories are independent; here US2 and US3 extend modules first created in US1,
+   so they are independently *testable* but not independently *buildable*. Said
+   so in the Dependencies section instead of letting the template's boilerplate
+   imply otherwise.
+
+**What I rejected and why:**
+- **Rejected splitting compound conditions out of US3 into Foundational.** They
+  belong with the configurability story: US3 is where the KB's expressiveness
+  claim is proven, and putting `all`/`any`/`not` earlier would have made US3
+  mostly validation chores.
+- **Rejected a "write the final risk-kb.json" task in Foundational.** T008 seeds
+  a leaf-only KB and T053 extends it once the compound and per-occurrence
+  capabilities exist. Authoring KB entries the engine cannot yet evaluate would
+  make the Foundational checkpoint unverifiable.
+- **Rejected putting rich validation error mapping in US1.** US1 needs the Zod
+  request schema to build a `QuoteRequest` at all, but field-level `issues[]`
+  and the frontend error surfaces are exactly what US4 exists to deliver.
+  Splitting it this way keeps US4 a real increment rather than a cosmetic one.
+- **Rejected the template's sample tasks wholesale** (database migrations,
+  auth/authorization framework, environment configuration). This feature has no
+  persistence, no accounts, and no environment-dependent config by design — the
+  spec's Assumptions rule all three out.
+
+**Why (reasoning):**
+Phase ordering follows the constitution's own dependency logic: lookup tables
+before the evaluator that dispatches through them, evaluator before scoring,
+scoring before band resolution, band before premium, premium before summary
+composition — because the summary template may reference the premium. The two
+standing prohibitions (no `any`, no scoring constants) are stated once at the top
+of the file and restated in the closing Notes as a "if a task seems to need a
+hardcoded value, the task is wrong" rule, so an implementing agent meets them
+before reading any individual task. `AGENT_LOG.md` is called out as a standing
+per-task obligation rather than a single polish task, since Principle VI requires
+logging in the same change, not as a cleanup pass.
+
+**Validation:** Wrote a Node script to parse `tasks.md` against the required
+`- [ ] T### [P?] [US#?] description` format: 65 task lines, 0 malformed, IDs
+strictly sequential T001–T065 with no gaps, story labels present on all and only
+story-phase tasks (Setup/Foundational/Polish = 23 unlabelled, US1=16, US2=7,
+US3=14, US4=5). One task (T063) names a command rather than a file path, which is
+intended for a verification task. Node native type stripping confirmed working on
+22.22.3 before being written into T002; the `/tmp` fixture was deleted afterwards.
+**Files touched:** `specs/001-policy-quote-app/tasks.md`, `AGENT_LOG.md`
