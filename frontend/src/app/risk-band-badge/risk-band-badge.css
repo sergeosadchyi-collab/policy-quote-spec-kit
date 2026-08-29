@@ -1,0 +1,38 @@
+/*
+ * The base rule carries ALL the structural styling, so an unrecognised band id
+ * — one added to the KB after this file was written — still renders as a
+ * perfectly presentable neutral badge. The per-band rules below add colour only.
+ * Nothing here is required for correctness; a band with no matching rule loses
+ * no information, only tint (FR-015).
+ */
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pq-ink);
+  background: var(--pq-rule);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge--standard {
+  color: #0f5132;
+  background: #d6f2e0;
+  border-color: #a9dfc0;
+}
+
+.badge--elevated {
+  color: #7a4b00;
+  background: #fdeccd;
+  border-color: #f2d29b;
+}
+
+.badge--high-risk {
+  color: var(--pq-danger);
+  background: var(--pq-danger-bg);
+  border-color: #efc2c4;
+}

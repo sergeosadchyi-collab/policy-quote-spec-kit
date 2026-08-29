@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "basePremium": 300,
+  "coverageLoadFactor": 1.2,
+
+  "riskBands": [
+    {
+      "id": "STANDARD",
+      "label": "Standard",
+      "min": 0,
+      "max": 25,
+      "riskMultiplier": 1.0,
+      "summaryTemplate": "{{customerName}}, your {{propertyType}} scored {{riskScore}} and sits in our {{riskBandLabel}} band. Your indicative premium is £{{annualPremium}} a year (£{{monthlyPremium}} a month)."
+    },
+    {
+      "id": "ELEVATED",
+      "label": "Elevated",
+      "min": 26,
+      "max": 60,
+      "riskMultiplier": 1.5,
+      "summaryTemplate": "{{customerName}}, your {{propertyType}} scored {{riskScore}}, placing it in our {{riskBandLabel}} band with {{appliedFactorCount}} factor(s) applied. Your indicative premium is £{{annualPremium}} a year (£{{monthlyPremium}} a month)."
+    },
+    {
+      "id": "HIGH_RISK",
+      "label": "HIGH RISK",
+      "min": 61,
+      "max": 999,
+      "riskMultiplier": 2.2,
+      "summaryTemplate": "{{customerName}}, your {{propertyType}} scored {{riskScore}} and falls into our {{riskBandLabel}} band, with {{appliedFactorCount}} factor(s) applied. Your indicative premium is £{{annualPremium}} a year (£{{monthlyPremium}} a month)."
+    }
+  ],
+
+  "factors": [
+    {
+      "id": "age_young_or_elderly",
+      "description": "Policyholder is under 25 or over 75 — statistically higher claim frequency",
+      "condition": { "field": "age", "operator": "outside range", "min": 25, "max": 75 },
+      "points": 20
+    },
+    {
+      "id": "property_type_flat",
+      "description": "Flat — shared building risk such as escape of water from neighbouring units",
+      "condition": { "field": "propertyType", "operator": "eq", "value": "Flat" },
+      "points": 10
+    },
+    {
+      "id": "property_high_value",
+      "description": "Property valued over £500,000 — greater rebuild and contents exposure",
+      "condition": { "field": "propertyValue", "operator": "gt", "value": 500000 },
+      "points": 25
+    },
+    {
+      "id": "previous_claims_per_claim",
+      "description": "Each claim made in the last five years",
+      "condition": { "field": "previousClaims", "operator": "gte", "value": 1 },
+      "points": 12,
+      "perOccurrence": true,
+      "occurrenceField": "previousClaims"
+    },
+    {
+      "id": "high_value_flat",
+      "description": "A flat valued over £500,000 — high rebuild cost combined with shared building risk",
+      "condition": {
+        "all": [
+          { "field": "propertyType", "operator": "eq", "value": "Flat" },
+          { "field": "propertyValue", "operator": "gt", "value": 500000 }
+        ]
+      },
+      "points": 15
+    },
+    {
+      "id": "coastal_flood_area",
+      "description": "Property in a coastal postcode area with elevated flood exposure",
+      "condition": {
+        "any": [
+          { "field": "postcode", "operator": "startsWith", "value": "TR" },
+          { "field": "postcode", "operator": "startsWith", "value": "PL" }
+        ]
+      },
+      "points": 18
+    }
+  ]
+}

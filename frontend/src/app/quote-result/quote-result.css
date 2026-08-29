@@ -1,0 +1,115 @@
+.quote-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.75rem;
+  background: var(--pq-surface);
+  border: 1px solid var(--pq-rule);
+  border-radius: var(--pq-radius);
+  box-shadow: var(--pq-shadow);
+}
+
+.quote-result__title {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.quote-result__headline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0;
+}
+
+.quote-result__amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-result__cadence {
+  font-size: 0.95rem;
+  color: var(--pq-ink-muted);
+}
+
+.quote-result__annual {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--pq-ink-muted);
+}
+
+.quote-result__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.quote-result__summary {
+  margin: 0.5rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pq-rule);
+  font-size: 0.95rem;
+}
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--pq-rule);
+}
+
+.breakdown__title {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--pq-ink-muted);
+}
+
+.breakdown__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem 1rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.breakdown__grid dt {
+  color: var(--pq-ink-muted);
+}
+
+.breakdown__grid dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdown__total-term,
+.breakdown__total-value {
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--pq-rule);
+  font-weight: 700;
+}
+
+.breakdown__total-term {
+  color: var(--pq-ink) !important;
+}
+
+.quote-result__provenance {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--pq-ink-muted);
+}
+
+@media (max-width: 30rem) {
+  .quote-result {
+    padding: 1.25rem;
+  }
+
+  .quote-result__amount {
+    font-size: 2.1rem;
+  }
+}
