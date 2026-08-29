@@ -20,26 +20,7 @@ import type { AppliedFactor } from '../models/quote';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './applied-factors.css',
-  template: `
-    <section class="factors">
-      <h3 class="factors__title">Why we priced it this way</h3>
-
-      @if (factors().length > 0) {
-        <ul class="factors__list">
-          @for (factor of factors(); track factor.id) {
-            <li class="factors__item">
-              <span class="factors__description">{{ factor.description }}</span>
-              <span class="factors__points">+{{ factor.points }}</span>
-            </li>
-          }
-        </ul>
-      } @else {
-        <p class="factors__empty">
-          No risk factors applied — your details did not trigger any of our risk rules.
-        </p>
-      }
-    </section>
-  `,
+  templateUrl: './applied-factors.html',
 })
 export class AppliedFactorsComponent {
   readonly factors = input.required<AppliedFactor[]>();

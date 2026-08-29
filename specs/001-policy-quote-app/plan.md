@@ -103,12 +103,12 @@ unit test.
 
 *GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design.*
 
-Gates derived from `.specify/memory/constitution.md` v1.0.0.
+Gates derived from `.specify/memory/constitution.md` v1.1.0.
 
 | # | Gate (source) | Status | How the design satisfies it |
 |---|---------------|--------|------------------------------|
 | I | KB-driven scoring; table-driven engine; no hardcoded values or per-factor branches | **PASS** | `risk-kb.json` at repo root; `LEAF_OPERATORS` / `GROUP_COMBINATORS` frozen lookup records (research R6); band resolution is positional, so no band `id` appears in code (research R7, data-model §3); every operand of the premium formula is KB-sourced |
-| II | Signals-only frontend state; standalone components; no NgModules | **PASS** | Angular 20.3 standalone + `provideZonelessChangeDetection()`; `loading`/`quoteResult`/`errorMessage` as `signal`, `canSubmit`/`hasResult` as `computed`; RxJS confined to `HttpClient` and converted to signals at the boundary (contracts/frontend-components §2–3) |
+| II | Signals-only frontend state; standalone components; no NgModules; external `templateUrl`/`styleUrl` only | **PASS** | Angular 20.3 standalone + `provideZonelessChangeDetection()`; `loading`/`quoteResult`/`errorMessage` as `signal`, `canSubmit`/`hasResult` as `computed`; RxJS confined to `HttpClient` and converted to signals at the boundary (contracts/frontend-components §2–3); every component is a `.ts`/`.html`/`.css` triple with no inline `template:` or `styles:` |
 | III | `handler(event, context)` export; HTTP is a thin adapter; Zod on all input; structured errors; required response fields incl. KB version | **PASS** | `node:http` adapter performs event translation only and has no error branch of its own (contracts/lambda-handler §1–2); handler never throws; response carries all seven required fields plus `kbVersion` |
 | IV | No `any`; KB schema typed and validated at load; separated, independently testable modules | **PASS** | All types via `z.infer<>` — the type *is* the validator's output, so the two cannot drift (research R5); `unknown` at the parse boundary; module boundary table in contracts/lambda-handler §5 |
 | V | Deterministic; no LLM/network; local KB file; no external UI libraries | **PASS** | No I/O in the pipeline after startup; hand-authored CSS only; `node:http`, `zod` and `semver` are the entire backend runtime surface |
@@ -120,6 +120,7 @@ Gates derived from `.specify/memory/constitution.md` v1.0.0.
 | Constraint | Status | Note |
 |-----------|--------|------|
 | Angular 17+, standalone, Signals, `HttpClient` for transport only | **PASS** | Angular 20.3.x (research R2) |
+| External templates and styles (`templateUrl` / `styleUrl`; no inline `template:` or `styles:`) | **PASS** | Each component ships `<name>.html` and `<name>.css` beside `<name>.ts` (contracts/frontend-components §0) |
 | `RiskBandBadgeComponent` accepting a `riskBand` input | **PASS** | Specified in contracts/frontend-components §1 |
 | UI displays `appliedFactors` using KB labels, no local copies | **PASS** | Verbatim rendering; frontend id→text maps explicitly prohibited (§4) |
 | Node + TS, Zod, Jest, single `POST /policy/quote` | **PASS** | contracts/policy-quote.openapi.yaml |
@@ -226,8 +227,8 @@ frontend/
 └── src/
     ├── main.ts                      # bootstrapApplication + zoneless
     └── app/
-        ├── app.ts                   # root standalone component
-        ├── quote-form/              # reactive form, signal state
+        ├── app.ts / app.html        # root standalone component + template
+        ├── quote-form/              # reactive form, signal state (.ts/.html/.css)
         ├── quote-result/            # premium, summary, coverage breakdown
         ├── applied-factors/         # renders KB descriptions verbatim
         ├── risk-band-badge/         # ⭐ RiskBandBadgeComponent (required)
@@ -236,6 +237,10 @@ frontend/
         └── models/
             └── quote.ts             # types mirroring the API contract
 ```
+
+Every component is a triple of `<name>.ts`, `<name>.html` and `<name>.css`:
+Principle II forbids inline `template:` and `styles:`, so the decorator carries
+`templateUrl` and `styleUrl` only.
 
 **Structure Decision**: Two independent npm packages (`backend/`, `frontend/`)
 with **`risk-kb.json` at the repository root** — not in a workspace, and not

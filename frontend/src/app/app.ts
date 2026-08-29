@@ -18,32 +18,7 @@ import { QuoteResultComponent } from './quote-result/quote-result';
   imports: [QuoteFormComponent, QuoteResultComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.css',
-  template: `
-    <header class="masthead">
-      <p class="masthead__brand">PolicyQuote</p>
-      <h1 class="masthead__title">Home insurance, priced in seconds</h1>
-      <p class="masthead__strapline">
-        Tell us about you and your property and we will show you an indicative premium — and
-        exactly how we arrived at it.
-      </p>
-    </header>
-
-    <main class="layout">
-      <app-quote-form (quoted)="onQuoted($event)" />
-
-      @if (quote(); as result) {
-        <app-quote-result [quote]="result" />
-      } @else {
-        <section class="placeholder">
-          <p>Your quote will appear here once you submit your details.</p>
-        </section>
-      }
-    </main>
-
-    <footer class="colophon">
-      <p>Indicative quote only. Not a contract of insurance.</p>
-    </footer>
-  `,
+  templateUrl: './app.html',
 })
 export class App {
   protected readonly quote = signal<QuoteResult | null>(null);

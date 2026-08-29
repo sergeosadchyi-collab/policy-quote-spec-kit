@@ -1,6 +1,35 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 1.0.0 → 1.1.0
+Rationale: Principle II materially expanded with a template-location rule
+(external `templateUrl`/`styleUrl` mandatory, inline `template:`/`styles:`
+prohibited). No principle removed or redefined incompatibly, so MINOR.
+
+Principles modified:
+  - II. Signals-Only Frontend State — added external-template requirement
+
+Sections modified:
+  - Technology Constraints — frontend bullet now names `templateUrl`
+  - Development Workflow & Quality Gates — new gate 2 bullet on inline templates
+
+Templates requiring updates:
+  ✅ specs/001-policy-quote-app/contracts/frontend-components.md — updated with
+     the template-file requirement and the per-component `.html` file list.
+  ✅ specs/001-policy-quote-app/plan.md — frontend source tree updated with the
+     component `.html` files.
+  ✅ .specify/templates/plan-template.md — generic Constitution Check gate; no
+     edit needed.
+  ✅ .specify/templates/spec-template.md — no constitution-specific sections
+     affected; no edit needed.
+  ✅ .specify/templates/tasks-template.md — covered by generic categories.
+  ✅ AGENTS.md / CLAUDE.md — logging protocol unaffected.
+
+Deferred TODOs: none
+
+---
+PREVIOUS REPORT
+==================
 Version change: (template, unversioned) → 1.0.0
 Rationale: Initial ratification. The file previously contained only unfilled
 placeholder tokens; this is the first concrete constitution, so MAJOR = 1.
@@ -72,8 +101,17 @@ boundary.
 Components MUST be Angular 17+ standalone components. NgModules are PROHIBITED.
 Derived view state MUST use `computed()` rather than manual recomputation.
 
+Component templates MUST live in a separate `.html` file referenced via
+`templateUrl`. Inline `template:` strings are PROHIBITED, including single-line
+templates. Styles MUST likewise use `styleUrl`/`styleUrls`, not inline
+`styles:`. Each template file MUST sit beside its component file and share its
+base name (e.g. `quote-form.ts` → `quote-form.html`).
+
 *Rationale*: A single, consistent reactivity model removes dual-source-of-truth
-bugs and makes change propagation auditable.
+bugs and makes change propagation auditable. External templates keep markup
+diffable, lintable and formattable by standard tooling, and stop the
+presentation layer from being buried inside decorator metadata as components
+grow.
 
 ### III. Lambda-Compatible Backend Contract
 
@@ -147,7 +185,8 @@ they are the highest-value assertions in the system.
 
 ## Technology Constraints
 
-- **Frontend**: Angular 17+, standalone components, Angular Signals, RxJS
+- **Frontend**: Angular 17+, standalone components with external templates
+  (`templateUrl`) and external styles (`styleUrl`), Angular Signals, RxJS
   `HttpClient` for transport only. A reusable `RiskBandBadgeComponent` accepting
   a `riskBand` input MUST exist. The UI MUST display `appliedFactors` using
   KB-sourced labels rather than frontend-local copies of factor descriptions.
@@ -170,6 +209,8 @@ they are the highest-value assertions in the system.
 2. Before merging any change, the following gates MUST pass:
    - No `any` types introduced.
    - No scoring constants present in application code (Principle I).
+   - No inline `template:` or `styles:` in any `@Component` decorator
+     (Principle II).
    - Jest suite green, including all three band cases.
    - `AGENT_LOG.md` updated for every significant agent interaction.
 3. A change that adds a risk factor MUST be demonstrable as a KB-only diff. If
@@ -198,4 +239,4 @@ above. Deviations MUST be recorded in the plan's Complexity Tracking table with
 the justification and the rejected simpler alternative. Undocumented deviations
 MUST be treated as defects.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-28 | **Last Amended**: 2026-08-28
+**Version**: 1.1.0 | **Ratified**: 2026-08-28 | **Last Amended**: 2026-08-29

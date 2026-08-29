@@ -17,7 +17,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './risk-band-badge.css',
-  template: `<span class="badge" [class]="bandClass()">{{ label() }}</span>`,
+  templateUrl: './risk-band-badge.html',
 })
 export class RiskBandBadgeComponent {
   /** Styling hook only — never rendered as text. */

@@ -6,13 +6,45 @@ Technology Constraints, FR-015 – FR-018.
 
 ---
 
+## 0. Component file layout (required by the constitution)
+
+Every component MUST be a triple of files sharing one base name in one folder:
+
+| File | Referenced by | Contents |
+|------|---------------|----------|
+| `<name>.ts` | — | decorator + class only |
+| `<name>.html` | `templateUrl: './<name>.html'` | the entire template |
+| `<name>.css` | `styleUrl: './<name>.css'` | the entire stylesheet |
+
+Inline `template:` and `styles:` are PROHIBITED (Principle II), with no
+exemption for one-line templates. Current files:
+
+| Component | Template file |
+|-----------|---------------|
+| `App` | `src/app/app.html` |
+| `QuoteFormComponent` | `src/app/quote-form/quote-form.html` |
+| `QuoteResultComponent` | `src/app/quote-result/quote-result.html` |
+| `AppliedFactorsComponent` | `src/app/applied-factors/applied-factors.html` |
+| `RiskBandBadgeComponent` | `src/app/risk-band-badge/risk-band-badge.html` |
+
+Members referenced from a template may stay `protected`; AOT compiles the
+external template in the same class scope as an inline one, so visibility is
+unchanged by this rule.
+
+---
+
 ## 1. `RiskBandBadgeComponent` (required by the constitution)
 
 A reusable, standalone component presenting the risk band as a distinct visual
 badge that varies by band (FR-015).
 
 ```ts
-@Component({ selector: 'pq-risk-band-badge', standalone: true, /* ... */ })
+@Component({
+  selector: 'pq-risk-band-badge',
+  standalone: true,
+  templateUrl: './risk-band-badge.html',
+  styleUrl: './risk-band-badge.css',
+})
 export class RiskBandBadgeComponent {
   readonly riskBand = input.required<string>();   // band id, e.g. 'HIGH_RISK'
   readonly label    = input.required<string>();   // KB label, e.g. 'HIGH RISK'

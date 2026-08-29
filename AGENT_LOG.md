@@ -884,3 +884,79 @@ returned HIGH_RISK at score 112 and £66/month, and £66 × 12 = £792 exactly e
 the annual premium, satisfying FR-004a. `SOLUTION.md` is 278 words, within the
 300-word limit.
 **Files touched:** `backend/tests/contract/contract-conformance.test.ts`, `backend/package.json`, `README.md`, `SOLUTION.md`, `frontend/src/styles.css`, `frontend/src/app/quote-form/`, `frontend/src/app/quote-result/quote-result.css`, `specs/001-policy-quote-app/tasks.md`
+
+---
+
+### Entry 14 — 2026-08-29 08:50 — Constitution v1.1.0: external component templates
+
+**Agent/Model:** GitHub Copilot / Claude Sonnet 4.5
+**Scope:** frontend, docs
+
+**Prompt given (verbatim):**
+> I want to have frontend template as a separate html file.
+> Use templateUrl instead of template.
+> Before doing changes, enforce this rule in Constitution
+
+**Output received:**
+Amended `.specify/memory/constitution.md` to v1.1.0 (MINOR — Principle II
+materially expanded, nothing removed or redefined), with a Sync Impact Report
+prepended above the previous one. Principle II now requires a separate `.html`
+file referenced via `templateUrl`, prohibits inline `template:` and `styles:`,
+and requires the template to sit beside the component and share its base name.
+Added a matching merge gate under Development Workflow, and named `templateUrl`
+in the frontend Technology Constraint.
+
+Then extracted five inline templates into `app.html`, `quote-form.html`,
+`quote-result.html`, `applied-factors.html` and `risk-band-badge.html`, and
+swapped each decorator's `template:` for `templateUrl:`. Updated the plan's
+Constitution Check rows and source tree, and added §0 "Component file layout"
+to `contracts/frontend-components.md`.
+
+**What I changed:**
+Ordered the work the way the prompt asked: the constitution amendment landed
+first, so the code change is compliance with an existing rule rather than a
+change that later acquires a justification.
+
+Two details worth recording. First, `risk-band-badge` was a single-line
+template, and the instinct is to exempt it; I wrote the prohibition to say
+explicitly that there is no one-line exemption, because a rule with a "small
+enough" carve-out is a rule that erodes. Second, the templates reference
+`protected` members (`quote()`, `messageFor()`, `canSubmit()`), and moving them
+out of the decorator does not change class scope under AOT — the build confirms
+it, and §0 now says so, since the opposite is a common assumption.
+
+**What I rejected and why:**
+Rejected reformatting the markup while moving it. Every template is dedented by
+the four spaces the backtick literal carried and is otherwise byte-identical, so
+the diff reads as a move rather than a rewrite; folding a re-indent or a tag
+tidy-up into the same change would hide any accidental behavioural edit.
+
+Rejected leaving `styles:` unmentioned. No component used it, but a rule that
+covers only templates invites the same content to reappear as inline styles, so
+the principle names both.
+
+**Why (reasoning):**
+Nothing here touches scoring: no KB values moved into the frontend, the badge
+still receives both the band id and the KB label and still maps neither, and
+`applied-factors.html` still prints KB descriptions verbatim with no id→text
+map. The constraint the change actually serves is reviewability — a 351-line
+`quote-form.ts` was mostly markup, and markup buried in decorator metadata is
+invisible to HTML tooling.
+
+**Validation:** `npx ng build` succeeds (216.37 kB initial, 3.8 s), which is the
+meaningful check here: AOT resolves every `templateUrl` and type-checks every
+binding against its component class, so a missing file, a wrong relative path or
+a mis-scoped member would have failed the build.
+
+**Files touched:** `.specify/memory/constitution.md`, `frontend/src/app/app.ts`,
+`frontend/src/app/app.html`, `frontend/src/app/quote-form/quote-form.ts`,
+`frontend/src/app/quote-form/quote-form.html`,
+`frontend/src/app/quote-result/quote-result.ts`,
+`frontend/src/app/quote-result/quote-result.html`,
+`frontend/src/app/applied-factors/applied-factors.ts`,
+`frontend/src/app/applied-factors/applied-factors.html`,
+`frontend/src/app/risk-band-badge/risk-band-badge.ts`,
+`frontend/src/app/risk-band-badge/risk-band-badge.html`,
+`specs/001-policy-quote-app/plan.md`,
+`specs/001-policy-quote-app/contracts/frontend-components.md`
+
